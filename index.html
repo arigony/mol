@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Laboratório de Avogadro - didático</title>
+  <title>Laboratório de Avogadro - didático limpo</title>
   <style>
     :root{
       --accent:#00f2ff;
@@ -42,12 +42,12 @@
     .markerLabel{position:absolute;top:16px;transform:translateX(-50%);font-size:.62rem;opacity:.9;white-space:nowrap}
 
     #conceptPill{
-      position:absolute;left:10px;right:72px;top:calc(env(safe-area-inset-top,0) + 148px);z-index:24;
+      position:absolute;left:10px;right:10px;top:calc(env(safe-area-inset-top,0) + 148px);z-index:24;
       padding:9px 12px;border-radius:16px;background:rgba(0,0,0,.52);border:1px solid rgba(255,255,255,.12);
       backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-size:.82rem;line-height:1.35
     }
 
-    #hud{position:absolute;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0));z-index:30;display:flex;justify-content:space-between;gap:8px;align-items:flex-end}
+    #hud{display:none}
     .pill{padding:8px 10px;border-radius:999px;background:rgba(0,0,0,.58);border:1px solid rgba(255,255,255,.12);font-size:.82rem;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
     #fallbackWrap{display:flex;gap:8px;align-items:flex-end}
     #slider{width:54px;height:min(39vh,300px);border-radius:32px;background:rgba(25,25,25,.82);border:1px solid rgba(255,255,255,.12);padding:6px;position:relative;touch-action:none;box-shadow:0 8px 24px rgba(0,0,0,.25)}
@@ -166,7 +166,7 @@ const sliderThumb = document.getElementById('sliderThumb');
 
 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 const dprMax = isMobile ? 1.25 : 1.6;
-const particleCount = isMobile ? 190 : 330;
+const particleCount = isMobile ? 450 : 900;
 const detectIntervalMs = isMobile ? 140 : 100;
 const drawFPS = isMobile ? 24 : 30;
 const AVOGADRO_EXP = 23.7797;
