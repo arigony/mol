@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Laboratório de Avogadro - V5 educacional</title>
+  <title>Laboratório de Avogadro - App Interativo</title>
   <style>
     :root{
       --accent:#00f2ff;
@@ -43,7 +43,7 @@
     #milestoneLabels span{white-space:nowrap;opacity:.95}
 
     #conceptPill{
-      position:absolute;left:10px;right:10px;top:calc(env(safe-area-inset-top,0) + 148px);z-index:24;
+      position:absolute;left:10px;right:10px;top:calc(env(safe-area-inset-top,0) + 178px);z-index:24;
       padding:9px 12px;border-radius:16px;background:rgba(0,0,0,.52);border:1px solid rgba(255,255,255,.12);
       backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-size:.82rem;line-height:1.35
     }
@@ -65,7 +65,7 @@
     .warn{color:#ffd59a;font-size:.92rem}
 
     @media (max-height:700px){
-      #conceptPill{top:calc(env(safe-area-inset-top,0) + 144px);font-size:.79rem;padding:8px 10px}
+      #conceptPill{top:calc(env(safe-area-inset-top,0) + 172px);font-size:.79rem;padding:8px 10px}
       #milestoneLabels{font-size:.69rem}
       #slider{height:min(34vh,250px)}
     }
@@ -77,7 +77,7 @@
     <div class="card">
       <h1>Laboratório de Avogadro</h1>
       <p><strong>Feche a mão = 1 molécula.</strong><br><strong>Abra a mão = a quantidade cresce até 1 mol.</strong></p>
-      <p>Esta V5 destaca melhor as <strong>etapas intermediárias</strong>: uma molécula, poucas moléculas, muitas moléculas e, por fim, o <strong>número de Avogadro</strong>.</p>
+      <p>Uma experiência interativa para ajudar professores e estudantes a visualizar a enorme dimensão do <strong>número de Avogadro</strong>.</p>
       <p class="warn">Nuvem de pontos = representação ilustrativa. Não são todas as moléculas individualmente.</p>
       <button id="startBtn" class="action" type="button">INICIAR</button>
     </div>
