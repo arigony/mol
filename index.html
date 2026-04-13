@@ -2,164 +2,68 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Laboratório de Avogadro — Mobile Híbrido</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Laboratório de Avogadro - ultraleve</title>
   <style>
     :root{
       --accent:#00f2ff;
       --gold:#ffd700;
+      --bg:#000;
       --panel:rgba(0,0,0,.72);
-      --panel2:rgba(0,0,0,.55);
-      --text:#fff;
-      --soft:#b8fbff;
+      --soft:#9cefff;
       --danger:#ff6b6b;
     }
     *{box-sizing:border-box}
-    html,body{
-      margin:0;
-      width:100%;
-      height:100%;
-      background:#000;
-      color:var(--text);
-      font-family:Arial, Helvetica, sans-serif;
-      overflow:hidden;
-      touch-action:none;
-      -webkit-tap-highlight-color:transparent;
-    }
-    #app{position:fixed; inset:0; width:100vw; height:100dvh; background:#000; overflow:hidden}
-    #video, #fxCanvas{
-      position:absolute; inset:0; width:100%; height:100%;
-    }
-    #video{object-fit:cover; transform:scaleX(-1); background:#000; z-index:1}
-    #fxCanvas{z-index:5; pointer-events:none}
-
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;font-family:Segoe UI,Arial,sans-serif;color:#fff;-webkit-tap-highlight-color:transparent}
+    body{position:fixed;inset:0}
+    #app{position:fixed;inset:0;width:100vw;height:100dvh;background:#000;overflow:hidden}
+    #video,#fx{position:absolute;inset:0;width:100%;height:100%}
+    #video{object-fit:cover;transform:scaleX(-1);background:#000}
+    #fx{pointer-events:none}
     header{
-      position:absolute; left:0; right:0; top:0;
-      z-index:20; text-align:center;
-      padding:calc(10px + env(safe-area-inset-top, 0px)) 12px 10px;
-      background:linear-gradient(to bottom, rgba(0,0,0,.82), rgba(0,0,0,.55));
-      border-bottom:2px solid var(--accent);
-      backdrop-filter:blur(10px);
-      -webkit-backdrop-filter:blur(10px);
+      position:absolute;top:env(safe-area-inset-top,0);left:0;right:0;z-index:20;
+      background:var(--panel);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+      border-bottom:2px solid var(--accent);padding:12px 14px 10px;text-align:center
     }
     header.reached{border-bottom-color:var(--gold)}
-    .title{font-size:.78rem; font-weight:900; letter-spacing:2px; opacity:.88; text-transform:uppercase}
-    #numberDisplay{
-      margin-top:4px;
-      font-family:"Courier New", monospace;
-      font-size:clamp(1.3rem, 4.8vw, 2rem);
-      font-weight:700;
-      color:var(--accent);
-      line-height:1.12;
-    }
-    header.reached #numberDisplay{color:var(--gold); text-shadow:0 0 18px rgba(255,215,0,.45)}
-    #molDisplay{margin-top:3px; font-size:clamp(.84rem, 2.7vw, 1rem); color:var(--soft)}
-    #modeLine{margin-top:5px; font-size:.78rem; opacity:.92}
-    .pill{
-      display:inline-block; padding:5px 9px; border-radius:999px;
-      background:rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.12)
-    }
-
-    #startOverlay, #errorOverlay{
-      position:absolute; inset:0; z-index:100;
-      display:flex; align-items:center; justify-content:center;
-      background:rgba(0,0,0,.9); padding:20px;
-    }
-    #errorOverlay[hidden]{display:none}
-    .panel{
-      width:min(92vw, 470px);
-      border-radius:22px;
-      padding:20px 18px;
-      background:rgba(14,14,14,.95);
-      border:1px solid rgba(255,255,255,.12);
-      box-shadow:0 16px 50px rgba(0,0,0,.45);
-      text-align:center;
-    }
-    .panel h1{margin:0 0 10px; font-size:1.15rem}
-    .panel p{margin:0 0 14px; line-height:1.45; font-size:.97rem; opacity:.92}
-    button{
-      appearance:none; border:none; border-radius:999px; cursor:pointer;
-      min-height:46px; padding:12px 20px; font-size:1rem; font-weight:800;
-    }
-    .primary{background:var(--accent); color:#000}
-    .ghost{background:rgba(255,255,255,.08); color:#fff; border:1px solid rgba(255,255,255,.14)}
-
-    #hudLeft{
-      position:absolute; left:10px; bottom:calc(12px + env(safe-area-inset-bottom,0px)); z-index:20;
-      display:flex; flex-direction:column; gap:8px; max-width:68vw;
-    }
-    .badge{
-      display:inline-flex; align-items:center; gap:6px;
-      width:max-content; max-width:100%;
-      padding:8px 12px; border-radius:999px;
-      background:var(--panel2); border:1px solid rgba(255,255,255,.12);
-      backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-      font-size:.82rem;
-    }
-    .badge.error{border-color:rgba(255,107,107,.45); background:rgba(110,0,0,.35)}
-
-    #controls{
-      position:absolute; right:10px; top:50%; transform:translateY(-50%);
-      z-index:20; display:flex; flex-direction:column; align-items:center; gap:10px;
-      user-select:none;
-    }
-    #sliderWrap{
-      width:62px; height:min(54dvh, 430px);
-      border-radius:40px; padding:10px;
-      background:var(--panel);
-      border:1px solid rgba(255,255,255,.12);
-      backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-      display:flex; justify-content:center; align-items:center;
-    }
-    #sliderTrack{
-      position:relative; width:16px; height:100%; border-radius:999px;
-      background:linear-gradient(to top, rgba(0,242,255,.12), rgba(0,242,255,.85));
-      box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
-    }
-    #sliderFill{
-      position:absolute; left:0; right:0; bottom:0; height:0%; border-radius:999px;
-      background:linear-gradient(to top, var(--accent), var(--gold));
-      box-shadow:0 0 18px rgba(0,242,255,.35);
-    }
-    #sliderThumb{
-      position:absolute; left:50%; transform:translate(-50%,50%);
-      bottom:0%; width:34px; height:34px; border-radius:50%;
-      background:#fff; border:4px solid var(--accent);
-      box-shadow:0 4px 18px rgba(0,0,0,.3);
-    }
-    #sliderLabel{
-      width:76px; text-align:center; font-size:.78rem; line-height:1.15;
-      padding:8px 6px; border-radius:14px;
-      background:var(--panel); border:1px solid rgba(255,255,255,.12)
-    }
-
-    #quickBtns{
-      position:absolute; left:50%; transform:translateX(-50%);
-      bottom:calc(12px + env(safe-area-inset-bottom,0px)); z-index:20;
-      display:flex; gap:8px; flex-wrap:wrap; justify-content:center;
-      max-width:calc(100vw - 120px); padding:0 8px;
-    }
-    #quickBtns button{min-height:38px; padding:8px 12px; font-size:.82rem}
-
+    .title{font-size:.76rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;opacity:.82}
+    #numberDisplay{margin-top:4px;font-size:clamp(1.35rem,4vw,2rem);font-weight:800;color:var(--accent);font-family:"Courier New",monospace;line-height:1.08}
+    header.reached #numberDisplay{color:var(--gold);text-shadow:0 0 18px rgba(255,215,0,.45)}
+    #molDisplay{font-size:clamp(.9rem,2.8vw,1rem);color:var(--soft)}
     sup{font-size:.62em}
+    #hud{position:absolute;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0));z-index:30;display:flex;justify-content:space-between;gap:8px;align-items:flex-end}
+    .pill{padding:8px 10px;border-radius:999px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.12);font-size:.83rem;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+    #fallbackWrap{display:flex;gap:8px;align-items:flex-end}
+    #slider{width:54px;height:min(42vh,320px);border-radius:32px;background:rgba(25,25,25,.85);border:1px solid rgba(255,255,255,.12);padding:6px;position:relative;touch-action:none;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+    #sliderFill{position:absolute;left:6px;right:6px;bottom:6px;height:0%;border-radius:24px;background:linear-gradient(180deg,var(--gold),var(--accent))}
+    #sliderThumb{position:absolute;left:50%;bottom:0%;transform:translate(-50%,50%);width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(0,242,255,.35)}
+    #miniBtns{display:flex;flex-direction:column;gap:6px}
+    #miniBtns button{border:none;border-radius:999px;padding:8px 10px;font-size:.8rem;font-weight:700;background:rgba(0,0,0,.65);color:#fff;border:1px solid rgba(255,255,255,.12)}
+    #overlay,#error{position:absolute;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.92)}
+    #error[hidden]{display:none}
+    .card{width:min(92vw,460px);padding:22px 18px;border-radius:22px;background:rgba(14,14,14,.94);border:1px solid rgba(255,255,255,.12);box-shadow:0 12px 42px rgba(0,0,0,.45);text-align:center}
+    h1{margin:0 0 12px;font-size:1.18rem}
+    p{margin:0 0 14px;line-height:1.45;font-size:.98rem;opacity:.94}
+    button.action{border:none;border-radius:999px;padding:14px 22px;min-height:48px;font-size:1rem;font-weight:800;background:var(--accent);color:#000}
+    .warn{color:#ffd59a;font-size:.92rem}
   </style>
 </head>
 <body>
 <div id="app">
-  <div id="startOverlay">
-    <div class="panel">
+  <div id="overlay">
+    <div class="card">
       <h1>Laboratório de Avogadro</h1>
-      <p>Versão móvel híbrida: funciona por gesto da mão <strong>quando o rastreamento responder</strong> e também por <strong>toque no controle lateral</strong>, para garantir uso em aula.</p>
-      <p style="font-size:.88rem; opacity:.8">Abra em HTTPS no celular.</p>
-      <button id="startBtn" class="primary" type="button">INICIAR</button>
+      <p>Versão ultraleve para smartphone. Aqui o rastreamento da mão roda separado da animação para não travar.</p>
+      <p class="warn">Abra em HTTPS. Se a mão oscilar em algum aparelho, o controle lateral continua funcionando.</p>
+      <button id="startBtn" class="action" type="button">INICIAR</button>
     </div>
   </div>
 
-  <div id="errorOverlay" hidden>
-    <div class="panel">
+  <div id="error" hidden>
+    <div class="card">
       <h1>Não foi possível iniciar</h1>
       <p id="errorText"></p>
-      <button id="retryBtn" class="primary" type="button">TENTAR NOVAMENTE</button>
+      <button id="retryBtn" class="action" type="button">TENTAR NOVAMENTE</button>
     </div>
   </div>
 
@@ -167,137 +71,104 @@
     <div class="title">Laboratório de Avogadro</div>
     <div id="numberDisplay">1 MOLÉCULA</div>
     <div id="molDisplay">1,66 x 10<sup>-24</sup> mol</div>
-    <div id="modeLine"><span class="pill" id="modeBadge">Modo: aguardando</span></div>
   </header>
 
   <video id="video" playsinline webkit-playsinline muted autoplay></video>
-  <canvas id="fxCanvas"></canvas>
+  <canvas id="fx"></canvas>
 
-  <div id="hudLeft">
-    <div class="badge" id="statusBadge">Status: aguardando início</div>
-    <div class="badge" id="handBadge">Rastreamento: sem mão</div>
-  </div>
-
-  <div id="controls">
-    <div id="sliderWrap">
-      <div id="sliderTrack">
+  <div id="hud">
+    <div>
+      <div class="pill" id="statusBadge">Status: aguardando início</div>
+      <div class="pill" id="trackBadge" style="margin-top:8px">Rastreamento: aguardando</div>
+      <div class="pill" id="modeBadge" style="margin-top:8px">Modo: aguardando</div>
+    </div>
+    <div id="fallbackWrap">
+      <div id="miniBtns">
+        <button data-v="0">1 molécula</button>
+        <button data-v="0.5">meio</button>
+        <button data-v="1">1 mol</button>
+      </div>
+      <div id="slider" aria-label="Controle manual">
         <div id="sliderFill"></div>
         <div id="sliderThumb"></div>
       </div>
     </div>
-    <div id="sliderLabel">toque<br>ou mão</div>
-  </div>
-
-  <div id="quickBtns">
-    <button type="button" class="ghost" data-v="0">1 molécula</button>
-    <button type="button" class="ghost" data-v="0.45">≈ 1 mmol</button>
-    <button type="button" class="ghost" data-v="1">1 mol</button>
   </div>
 </div>
 
 <script type="module">
-import { HandLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.34/vision_bundle.mjs";
+import { HandLandmarker, FilesetResolver } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.34/vision_bundle.mjs';
 
 const video = document.getElementById('video');
-const canvas = document.getElementById('fxCanvas');
+const canvas = document.getElementById('fx');
 const ctx = canvas.getContext('2d', { alpha: true });
-
-const startOverlay = document.getElementById('startOverlay');
-const errorOverlay = document.getElementById('errorOverlay');
+const overlay = document.getElementById('overlay');
+const errorBox = document.getElementById('error');
 const errorText = document.getElementById('errorText');
 const startBtn = document.getElementById('startBtn');
 const retryBtn = document.getElementById('retryBtn');
-
-const statusBadge = document.getElementById('statusBadge');
-const handBadge = document.getElementById('handBadge');
-const modeBadge = document.getElementById('modeBadge');
 const header = document.getElementById('header');
 const numberDisplay = document.getElementById('numberDisplay');
 const molDisplay = document.getElementById('molDisplay');
-
-const sliderTrack = document.getElementById('sliderTrack');
+const statusBadge = document.getElementById('statusBadge');
+const trackBadge = document.getElementById('trackBadge');
+const modeBadge = document.getElementById('modeBadge');
+const slider = document.getElementById('slider');
 const sliderFill = document.getElementById('sliderFill');
 const sliderThumb = document.getElementById('sliderThumb');
 
 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-const particleCount = isMobile ? 1200 : 2400;
-const detectEveryMs = isMobile ? 95 : 70;
+const dprMax = isMobile ? 1.25 : 1.6;
+const particleCount = isMobile ? 180 : 320;
+const detectIntervalMs = isMobile ? 140 : 100;
+const drawFPS = isMobile ? 24 : 30;
 
-let handLandmarker = null;
+let tracker = null;
 let streamRef = null;
-let rafId = 0;
 let running = false;
 let booting = false;
-
-let modelValue = 0;
-let touchValue = 0;
-let smoothValue = 0;
+let detectTimer = 0;
+let drawTimer = 0;
 let manualUntil = 0;
 let handSeenAt = 0;
-let lastDetectAt = 0;
-let lastFrameTime = 0;
-let usingHand = false;
+let handValue = 0;
+let touchValue = 0;
+let smoothValue = 0;
+let trackingActive = false;
+let plume = { cx: 0.5, cy: 0.58 };
 
-const particles = [];
-for (let i = 0; i < particleCount; i++) {
-  particles.push({
-    x: Math.random(), y: Math.random(),
-    vx: (Math.random() - 0.5) * 0.0009,
-    vy: (Math.random() - 0.5) * 0.0009,
-    size: 1.5 + Math.random() * 2.5,
-    a: 0.35 + Math.random() * 0.45
-  });
-}
+const particles = Array.from({ length: particleCount }, () => ({
+  x: (Math.random() - 0.5),
+  y: (Math.random() - 0.5),
+  vx: (Math.random() - 0.5) * 0.003,
+  vy: (Math.random() - 0.5) * 0.003,
+  s: 1.2 + Math.random() * 3,
+  a: 0.25 + Math.random() * 0.45,
+  j: Math.random() * Math.PI * 2
+}));
 
 function setStatus(text, error = false) {
   statusBadge.textContent = text;
-  statusBadge.classList.toggle('error', error);
+  statusBadge.style.borderColor = error ? 'rgba(255,107,107,.45)' : 'rgba(255,255,255,.12)';
+  statusBadge.style.background = error ? 'rgba(110,0,0,.35)' : 'rgba(0,0,0,.6)';
 }
 
-function showError(message) {
-  errorText.textContent = message;
-  errorOverlay.hidden = false;
-  startOverlay.style.display = 'none';
-  setStatus('Status: erro ao iniciar', true);
+function fail(message) {
   running = false;
-  cancelAnimationFrame(rafId);
-}
-
-function hideError() {
-  errorOverlay.hidden = true;
-  setStatus('Status: carregando…');
+  clearInterval(detectTimer);
+  cancelAnimationFrame(drawTimer);
+  errorText.textContent = message;
+  errorBox.hidden = false;
+  overlay.style.display = 'none';
+  setStatus('Status: erro ao iniciar', true);
 }
 
 function formatSci(num) {
-  const s = num.toExponential(3);
-  const [m, e] = s.split('e+');
+  const [m, e] = num.toExponential(3).split('e+');
   return `${m.replace('.', ',')} x 10<sup>${e}</sup>`;
 }
 
-function setValue(v, source = 'touch') {
-  const clamped = Math.max(0, Math.min(1, v));
-  if (source === 'touch') {
-    touchValue = clamped;
-    manualUntil = performance.now() + 2500;
-    modeBadge.textContent = 'Modo: toque';
-  } else if (source === 'hand') {
-    modelValue = clamped;
-    handSeenAt = performance.now();
-    usingHand = true;
-    if (performance.now() > manualUntil) {
-      modeBadge.textContent = 'Modo: mão';
-    }
-  }
-}
-
-function activeTarget() {
-  if (performance.now() < manualUntil) return touchValue;
-  if (performance.now() - handSeenAt < 900) return modelValue;
-  usingHand = false;
-  return touchValue;
-}
-
-function updateDisplay(v) {
+function updateUI(v) {
   const fill = `${(v * 100).toFixed(1)}%`;
   sliderFill.style.height = fill;
   sliderThumb.style.bottom = fill;
@@ -308,14 +179,12 @@ function updateDisplay(v) {
     header.classList.remove('reached');
     return;
   }
-
   if (v > 0.97) {
     numberDisplay.innerHTML = '6,022 x 10<sup>23</sup>';
     molDisplay.innerHTML = '1,0000 mol';
     header.classList.add('reached');
     return;
   }
-
   header.classList.remove('reached');
   const N = Math.pow(10, v * 23.7797);
   const mol = N / 6.02214e23;
@@ -326,111 +195,114 @@ function updateDisplay(v) {
 function resize() {
   const w = window.innerWidth;
   const h = window.innerHeight;
-  canvas.width = Math.floor(w * Math.min(window.devicePixelRatio || 1, 1.5));
-  canvas.height = Math.floor(h * Math.min(window.devicePixelRatio || 1, 1.5));
+  const dpr = Math.min(window.devicePixelRatio || 1, dprMax);
+  canvas.width = Math.floor(w * dpr);
+  canvas.height = Math.floor(h * dpr);
   canvas.style.width = w + 'px';
   canvas.style.height = h + 'px';
-  ctx.setTransform(canvas.width / w, 0, 0, canvas.height / h, 0, 0);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
-function drawParticles(v) {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  ctx.clearRect(0, 0, w, h);
-
-  const active = Math.max(1, Math.floor(1 + v * (particleCount - 1)));
-  for (let i = 0; i < active; i++) {
-    const p = particles[i];
-    p.x += p.vx * (1 + v * 1.5);
-    p.y += p.vy * (1 + v * 1.5);
-    if (p.x < 0 || p.x > 1) p.vx *= -1;
-    if (p.y < 0 || p.y > 1) p.vy *= -1;
-    p.x = Math.max(0, Math.min(1, p.x));
-    p.y = Math.max(0, Math.min(1, p.y));
-
-    const x = (w * 0.5) + (p.x - 0.5) * (80 + v * 180);
-    const y = (h * 0.56) + (p.y - 0.5) * (80 + v * 180);
-    const color = v > 0.97 ? `rgba(255,215,0,${p.a})` : `rgba(0,242,255,${p.a})`;
-    ctx.beginPath();
-    ctx.fillStyle = color;
-    ctx.arc(x, y, p.size * (0.8 + v * 0.6), 0, Math.PI * 2);
-    ctx.fill();
-  }
+function setManual(v) {
+  touchValue = Math.max(0, Math.min(1, v));
+  manualUntil = performance.now() + 2500;
+  modeBadge.textContent = 'Modo: toque';
 }
 
-function opennessFromLandmarks(hand) {
+function setFromHand(v) {
+  handValue = Math.max(0, Math.min(1, v));
+  handSeenAt = performance.now();
+  trackingActive = true;
+  if (performance.now() > manualUntil) modeBadge.textContent = 'Modo: mão';
+}
+
+function currentTarget() {
+  if (performance.now() < manualUntil) return touchValue;
+  if (performance.now() - handSeenAt < 1100) return handValue;
+  trackingActive = false;
+  return touchValue;
+}
+
+function setSliderFromY(clientY) {
+  const rect = slider.getBoundingClientRect();
+  const ratio = 1 - ((clientY - rect.top) / rect.height);
+  setManual(ratio);
+}
+
+slider.addEventListener('pointerdown', (e) => {
+  slider.setPointerCapture(e.pointerId);
+  setSliderFromY(e.clientY);
+});
+slider.addEventListener('pointermove', (e) => {
+  if (e.pressure > 0 || e.buttons > 0) setSliderFromY(e.clientY);
+});
+slider.addEventListener('click', (e) => setSliderFromY(e.clientY));
+document.querySelectorAll('#miniBtns button').forEach(btn => btn.addEventListener('click', () => setManual(Number(btn.dataset.v))));
+
+function openness(hand) {
   const wrist = hand[0];
   const indexMcp = hand[5];
   const pinkyMcp = hand[17];
-  const tips = [hand[8], hand[12], hand[16], hand[20]];
+  const palmWidth = Math.hypot(indexMcp.x - pinkyMcp.x, indexMcp.y - pinkyMcp.y) || 0.0001;
 
-  const palm = (Math.hypot(wrist.x - indexMcp.x, wrist.y - indexMcp.y) +
-                Math.hypot(wrist.x - pinkyMcp.x, wrist.y - pinkyMcp.y)) / 2 || 0.0001;
+  const tips = [8, 12, 16, 20].map(i => hand[i]);
+  const mcps = [5, 9, 13, 17].map(i => hand[i]);
 
-  const avgTip = tips.reduce((acc, pt) => acc + Math.hypot(wrist.x - pt.x, wrist.y - pt.y), 0) / tips.length;
-  const ratio = avgTip / palm;
+  let score = 0;
+  for (let i = 0; i < tips.length; i++) {
+    const dTip = Math.hypot(tips[i].x - wrist.x, tips[i].y - wrist.y);
+    const dMcp = Math.hypot(mcps[i].x - wrist.x, mcps[i].y - wrist.y);
+    score += (dTip - dMcp) / palmWidth;
+  }
 
-  return Math.max(0, Math.min(1, (ratio - 1.15) / 1.55));
+  const thumbTip = hand[4], thumbIp = hand[3], indexTip = hand[8];
+  const thumbOpen = Math.hypot(thumbTip.x - indexTip.x, thumbTip.y - indexTip.y) / palmWidth;
+  score += Math.max(0, thumbOpen - 0.25) * 0.8;
+
+  return Math.max(0, Math.min(1, (score - 1.0) / 4.2));
 }
 
-async function createTracker() {
-  const vision = await FilesetResolver.forVisionTasks(
-    'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.34/wasm'
-  );
+function trackCenter(hand) {
+  const pts = [0,5,9,13,17].map(i => hand[i]);
+  const cx = pts.reduce((a,p)=>a+p.x,0)/pts.length;
+  const cy = pts.reduce((a,p)=>a+p.y,0)/pts.length;
+  plume.cx += (1 - cx - plume.cx) * 0.18;
+  plume.cy += (cy - plume.cy) * 0.18;
+}
 
-  const options = {
+async function buildTracker() {
+  const vision = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.34/wasm');
+  return await HandLandmarker.createFromOptions(vision, {
     baseOptions: {
-      modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task'
+      modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
+      delegate: 'CPU'
     },
     runningMode: 'VIDEO',
     numHands: 1,
-    minHandDetectionConfidence: 0.25,
-    minHandPresenceConfidence: 0.25,
-    minTrackingConfidence: 0.25
-  };
-
-  try {
-    setStatus('Status: carregando rastreador (GPU)…');
-    return await HandLandmarker.createFromOptions(vision, {
-      ...options,
-      baseOptions: { ...options.baseOptions, delegate: 'GPU' }
-    });
-  } catch (e) {
-    setStatus('Status: carregando rastreador (CPU)…');
-    return await HandLandmarker.createFromOptions(vision, {
-      ...options,
-      baseOptions: { ...options.baseOptions, delegate: 'CPU' }
-    });
-  }
+    minHandDetectionConfidence: 0.2,
+    minHandPresenceConfidence: 0.2,
+    minTrackingConfidence: 0.2
+  });
 }
 
 async function startCamera() {
-  if (!window.isSecureContext) {
-    throw new Error('Abra a página em HTTPS. Em smartphone, a câmera normalmente falha em file:// ou HTTP.');
-  }
-  if (!navigator.mediaDevices?.getUserMedia) {
-    throw new Error('Este navegador não oferece getUserMedia para a câmera.');
-  }
+  if (!window.isSecureContext) throw new Error('Abra esta página em HTTPS. Em smartphone, câmera em file:// ou HTTP normalmente falha.');
+  if (!navigator.mediaDevices?.getUserMedia) throw new Error('O navegador não oferece suporte a getUserMedia.');
 
-  setStatus('Status: solicitando câmera…');
   streamRef = await navigator.mediaDevices.getUserMedia({
     audio: false,
     video: {
       facingMode: 'user',
-      width: { ideal: isMobile ? 640 : 960 },
-      height: { ideal: isMobile ? 480 : 720 }
+      width: { ideal: 320 },
+      height: { ideal: 240 },
+      frameRate: { ideal: 24, max: 30 }
     }
   });
 
   video.srcObject = streamRef;
   await new Promise((resolve, reject) => {
     const onMeta = async () => {
-      try {
-        await video.play();
-        resolve();
-      } catch (e) {
-        reject(e);
-      }
+      try { await video.play(); resolve(); } catch (e) { reject(e); }
     };
     video.addEventListener('loadedmetadata', onMeta, { once: true });
   });
@@ -443,114 +315,128 @@ function stopCamera() {
   }
 }
 
-function detectHand(now) {
-  if (!handLandmarker || video.readyState < 2) return;
-  if (now - lastDetectAt < detectEveryMs) return;
-  lastDetectAt = now;
-
+function detectStep() {
+  if (!running || !tracker || video.readyState < 2) return;
   try {
-    const result = handLandmarker.detectForVideo(video, now);
+    const result = tracker.detectForVideo(video, performance.now());
     if (result?.landmarks?.length) {
-      const v = opennessFromLandmarks(result.landmarks[0]);
-      setValue(v, 'hand');
-      handBadge.textContent = 'Rastreamento: mão detectada';
+      const hand = result.landmarks[0];
+      setFromHand(openness(hand));
+      trackCenter(hand);
+      trackBadge.textContent = 'Rastreamento: mão detectada';
     } else {
-      handBadge.textContent = 'Rastreamento: sem mão';
+      trackBadge.textContent = 'Rastreamento: sem mão';
     }
   } catch (e) {
-    handBadge.textContent = 'Rastreamento: indisponível';
+    trackBadge.textContent = 'Rastreamento: indisponível';
   }
 }
 
-function loop(now) {
+function drawCloud(v) {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  ctx.clearRect(0, 0, w, h);
+
+  const active = Math.max(1, Math.floor(1 + v * (particleCount - 1)));
+  const spread = 70 + v * 150;
+  const baseX = plume.cx * w;
+  const baseY = plume.cy * h;
+  const gold = v > 0.97;
+
+  for (let i = 0; i < active; i++) {
+    const p = particles[i];
+    p.j += 0.02 + v * 0.02;
+    p.x += p.vx * (1 + v * 0.6);
+    p.y += p.vy * (1 + v * 0.6);
+    if (p.x < -1 || p.x > 1) p.vx *= -1;
+    if (p.y < -1 || p.y > 1) p.vy *= -1;
+
+    const swirl = Math.sin(p.j) * 0.15;
+    const x = baseX + (p.x + swirl) * spread;
+    const y = baseY + p.y * spread;
+    const r = p.s * (0.9 + v * 0.8);
+    ctx.beginPath();
+    ctx.fillStyle = gold ? `rgba(255,215,0,${p.a})` : `rgba(0,242,255,${p.a})`;
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+let lastPaint = 0;
+function paint(now) {
   if (!running) return;
-  const dt = Math.min(40, now - (lastFrameTime || now));
-  lastFrameTime = now;
-
-  detectHand(now);
-  const target = activeTarget();
-  smoothValue += (target - smoothValue) * (0.12 + Math.min(0.08, dt / 200));
-  updateDisplay(smoothValue);
-  drawParticles(smoothValue);
-
-  rafId = requestAnimationFrame(loop);
+  const minGap = 1000 / drawFPS;
+  if (!lastPaint || now - lastPaint >= minGap) {
+    lastPaint = now;
+    const t = currentTarget();
+    smoothValue += (t - smoothValue) * 0.12;
+    updateUI(smoothValue);
+    drawCloud(smoothValue);
+  }
+  drawTimer = requestAnimationFrame(paint);
 }
-
-function setSliderFromClientY(clientY) {
-  const rect = sliderTrack.getBoundingClientRect();
-  const ratio = 1 - ((clientY - rect.top) / rect.height);
-  setValue(ratio, 'touch');
-}
-
-sliderTrack.addEventListener('pointerdown', (e) => {
-  sliderTrack.setPointerCapture(e.pointerId);
-  setSliderFromClientY(e.clientY);
-});
-sliderTrack.addEventListener('pointermove', (e) => {
-  if (e.pressure > 0 || e.buttons > 0) setSliderFromClientY(e.clientY);
-});
-sliderTrack.addEventListener('click', (e) => setSliderFromClientY(e.clientY));
-
-document.querySelectorAll('#quickBtns button').forEach(btn => {
-  btn.addEventListener('click', () => setValue(Number(btn.dataset.v), 'touch'));
-});
 
 async function init() {
   if (booting) return;
   booting = true;
-  hideError();
   startBtn.disabled = true;
   startBtn.textContent = 'CARREGANDO...';
+  errorBox.hidden = true;
+  setStatus('Status: carregando…');
 
   try {
-    handLandmarker = await createTracker();
+    tracker = await buildTracker();
+    setStatus('Status: câmera…');
     await startCamera();
     resize();
     running = true;
-    startOverlay.style.display = 'none';
-    errorOverlay.hidden = true;
-    setStatus('Status: simulação ativa');
-    handBadge.textContent = 'Rastreamento: aguardando mão';
+    overlay.style.display = 'none';
+    trackBadge.textContent = 'Rastreamento: aguardando mão';
     modeBadge.textContent = 'Modo: toque';
-    setValue(0, 'touch');
-    cancelAnimationFrame(rafId);
-    rafId = requestAnimationFrame(loop);
+    setManual(0);
+    smoothValue = 0;
+    detectTimer = setInterval(detectStep, detectIntervalMs);
+    cancelAnimationFrame(drawTimer);
+    drawTimer = requestAnimationFrame(paint);
+    setStatus('Status: simulação ativa');
   } catch (e) {
     console.error(e);
-    showError(e?.message || 'Falha desconhecida ao iniciar.');
+    fail(e?.message || 'Falha desconhecida ao iniciar.');
   } finally {
+    booting = false;
     startBtn.disabled = false;
     startBtn.textContent = 'INICIAR';
-    booting = false;
   }
 }
 
 startBtn.addEventListener('click', init);
 retryBtn.addEventListener('click', () => {
-  errorOverlay.hidden = true;
+  errorBox.hidden = true;
   init();
 });
-
 window.addEventListener('resize', resize);
 window.addEventListener('orientationchange', () => setTimeout(resize, 200));
 document.addEventListener('visibilitychange', async () => {
   if (document.hidden) {
     running = false;
-    cancelAnimationFrame(rafId);
+    clearInterval(detectTimer);
+    cancelAnimationFrame(drawTimer);
     setStatus('Status: pausado');
   } else if (video.srcObject) {
     try { await video.play(); } catch {}
     running = true;
+    clearInterval(detectTimer);
+    detectTimer = setInterval(detectStep, detectIntervalMs);
+    cancelAnimationFrame(drawTimer);
+    drawTimer = requestAnimationFrame(paint);
     setStatus('Status: simulação ativa');
-    cancelAnimationFrame(rafId);
-    rafId = requestAnimationFrame(loop);
   }
 });
 window.addEventListener('beforeunload', stopCamera);
 
 resize();
-updateDisplay(0);
-drawParticles(0);
+updateUI(0);
+drawCloud(0);
 </script>
 </body>
 </html>
