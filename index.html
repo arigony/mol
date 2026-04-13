@@ -1,556 +1,79 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Laboratório de Avogadro — Mobile Híbrido</title>
-  <style>
-    :root{
-      --accent:#00f2ff;
-      --gold:#ffd700;
-      --panel:rgba(0,0,0,.72);
-      --panel2:rgba(0,0,0,.55);
-      --text:#fff;
-      --soft:#b8fbff;
-      --danger:#ff6b6b;
-    }
-    *{box-sizing:border-box}
-    html,body{
-      margin:0;
-      width:100%;
-      height:100%;
-      background:#000;
-      color:var(--text);
-      font-family:Arial, Helvetica, sans-serif;
-      overflow:hidden;
-      touch-action:none;
-      -webkit-tap-highlight-color:transparent;
-    }
-    #app{position:fixed; inset:0; width:100vw; height:100dvh; background:#000; overflow:hidden}
-    #video, #fxCanvas{
-      position:absolute; inset:0; width:100%; height:100%;
-    }
-    #video{object-fit:cover; transform:scaleX(-1); background:#000; z-index:1}
-    #fxCanvas{z-index:5; pointer-events:none}
-
-    header{
-      position:absolute; left:0; right:0; top:0;
-      z-index:20; text-align:center;
-      padding:calc(10px + env(safe-area-inset-top, 0px)) 12px 10px;
-      background:linear-gradient(to bottom, rgba(0,0,0,.82), rgba(0,0,0,.55));
-      border-bottom:2px solid var(--accent);
-      backdrop-filter:blur(10px);
-      -webkit-backdrop-filter:blur(10px);
-    }
-    header.reached{border-bottom-color:var(--gold)}
-    .title{font-size:.78rem; font-weight:900; letter-spacing:2px; opacity:.88; text-transform:uppercase}
-    #numberDisplay{
-      margin-top:4px;
-      font-family:"Courier New", monospace;
-      font-size:clamp(1.3rem, 4.8vw, 2rem);
-      font-weight:700;
-      color:var(--accent);
-      line-height:1.12;
-    }
-    header.reached #numberDisplay{color:var(--gold); text-shadow:0 0 18px rgba(255,215,0,.45)}
-    #molDisplay{margin-top:3px; font-size:clamp(.84rem, 2.7vw, 1rem); color:var(--soft)}
-    #modeLine{margin-top:5px; font-size:.78rem; opacity:.92}
-    .pill{
-      display:inline-block; padding:5px 9px; border-radius:999px;
-      background:rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.12)
-    }
-
-    #startOverlay, #errorOverlay{
-      position:absolute; inset:0; z-index:100;
-      display:flex; align-items:center; justify-content:center;
-      background:rgba(0,0,0,.9); padding:20px;
-    }
-    #errorOverlay[hidden]{display:none}
-    .panel{
-      width:min(92vw, 470px);
-      border-radius:22px;
-      padding:20px 18px;
-      background:rgba(14,14,14,.95);
-      border:1px solid rgba(255,255,255,.12);
-      box-shadow:0 16px 50px rgba(0,0,0,.45);
-      text-align:center;
-    }
-    .panel h1{margin:0 0 10px; font-size:1.15rem}
-    .panel p{margin:0 0 14px; line-height:1.45; font-size:.97rem; opacity:.92}
-    button{
-      appearance:none; border:none; border-radius:999px; cursor:pointer;
-      min-height:46px; padding:12px 20px; font-size:1rem; font-weight:800;
-    }
-    .primary{background:var(--accent); color:#000}
-    .ghost{background:rgba(255,255,255,.08); color:#fff; border:1px solid rgba(255,255,255,.14)}
-
-    #hudLeft{
-      position:absolute; left:10px; bottom:calc(12px + env(safe-area-inset-bottom,0px)); z-index:20;
-      display:flex; flex-direction:column; gap:8px; max-width:68vw;
-    }
-    .badge{
-      display:inline-flex; align-items:center; gap:6px;
-      width:max-content; max-width:100%;
-      padding:8px 12px; border-radius:999px;
-      background:var(--panel2); border:1px solid rgba(255,255,255,.12);
-      backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-      font-size:.82rem;
-    }
-    .badge.error{border-color:rgba(255,107,107,.45); background:rgba(110,0,0,.35)}
-
-    #controls{
-      position:absolute; right:10px; top:50%; transform:translateY(-50%);
-      z-index:20; display:flex; flex-direction:column; align-items:center; gap:10px;
-      user-select:none;
-    }
-    #sliderWrap{
-      width:62px; height:min(54dvh, 430px);
-      border-radius:40px; padding:10px;
-      background:var(--panel);
-      border:1px solid rgba(255,255,255,.12);
-      backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-      display:flex; justify-content:center; align-items:center;
-    }
-    #sliderTrack{
-      position:relative; width:16px; height:100%; border-radius:999px;
-      background:linear-gradient(to top, rgba(0,242,255,.12), rgba(0,242,255,.85));
-      box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
-    }
-    #sliderFill{
-      position:absolute; left:0; right:0; bottom:0; height:0%; border-radius:999px;
-      background:linear-gradient(to top, var(--accent), var(--gold));
-      box-shadow:0 0 18px rgba(0,242,255,.35);
-    }
-    #sliderThumb{
-      position:absolute; left:50%; transform:translate(-50%,50%);
-      bottom:0%; width:34px; height:34px; border-radius:50%;
-      background:#fff; border:4px solid var(--accent);
-      box-shadow:0 4px 18px rgba(0,0,0,.3);
-    }
-    #sliderLabel{
-      width:76px; text-align:center; font-size:.78rem; line-height:1.15;
-      padding:8px 6px; border-radius:14px;
-      background:var(--panel); border:1px solid rgba(255,255,255,.12)
-    }
-
-    #quickBtns{
-      position:absolute; left:50%; transform:translateX(-50%);
-      bottom:calc(12px + env(safe-area-inset-bottom,0px)); z-index:20;
-      display:flex; gap:8px; flex-wrap:wrap; justify-content:center;
-      max-width:calc(100vw - 120px); padding:0 8px;
-    }
-    #quickBtns button{min-height:38px; padding:8px 12px; font-size:.82rem}
-
-    sup{font-size:.62em}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Diagnóstico de Rastreamento da Mão</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#fff;font-family:Arial,sans-serif}
+  #video,#canvas{position:fixed;inset:0;width:100%;height:100%}
+  #video{object-fit:cover;transform:scaleX(-1);z-index:1}
+  #canvas{z-index:2;pointer-events:none}
+  #ui{position:fixed;left:0;right:0;top:0;z-index:3;padding:calc(10px + env(safe-area-inset-top,0px)) 12px 10px;background:rgba(0,0,0,.7);backdrop-filter:blur(8px)}
+  #msg{font-weight:700;margin-bottom:6px}
+  #meter{height:16px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden}
+  #fill{height:100%;width:0%;background:linear-gradient(90deg,#00f2ff,#ffd700)}
+  #overlay{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.92);padding:20px}
+  .box{max-width:460px;text-align:center;background:rgba(20,20,20,.95);padding:20px;border-radius:20px;border:1px solid rgba(255,255,255,.14)}
+  button{border:none;border-radius:999px;padding:14px 22px;font-size:1rem;font-weight:800;background:#00f2ff;color:#000}
+</style>
 </head>
 <body>
-<div id="app">
-  <div id="startOverlay">
-    <div class="panel">
-      <h1>Laboratório de Avogadro</h1>
-      <p>Versão móvel híbrida: funciona por gesto da mão <strong>quando o rastreamento responder</strong> e também por <strong>toque no controle lateral</strong>, para garantir uso em aula.</p>
-      <p style="font-size:.88rem; opacity:.8">Abra em HTTPS no celular.</p>
-      <button id="startBtn" class="primary" type="button">INICIAR</button>
-    </div>
-  </div>
-
-  <div id="errorOverlay" hidden>
-    <div class="panel">
-      <h1>Não foi possível iniciar</h1>
-      <p id="errorText"></p>
-      <button id="retryBtn" class="primary" type="button">TENTAR NOVAMENTE</button>
-    </div>
-  </div>
-
-  <header id="header">
-    <div class="title">Laboratório de Avogadro</div>
-    <div id="numberDisplay">1 MOLÉCULA</div>
-    <div id="molDisplay">1,66 x 10<sup>-24</sup> mol</div>
-    <div id="modeLine"><span class="pill" id="modeBadge">Modo: aguardando</span></div>
-  </header>
-
-  <video id="video" playsinline webkit-playsinline muted autoplay></video>
-  <canvas id="fxCanvas"></canvas>
-
-  <div id="hudLeft">
-    <div class="badge" id="statusBadge">Status: aguardando início</div>
-    <div class="badge" id="handBadge">Rastreamento: sem mão</div>
-  </div>
-
-  <div id="controls">
-    <div id="sliderWrap">
-      <div id="sliderTrack">
-        <div id="sliderFill"></div>
-        <div id="sliderThumb"></div>
-      </div>
-    </div>
-    <div id="sliderLabel">toque<br>ou mão</div>
-  </div>
-
-  <div id="quickBtns">
-    <button type="button" class="ghost" data-v="0">1 molécula</button>
-    <button type="button" class="ghost" data-v="0.45">≈ 1 mmol</button>
-    <button type="button" class="ghost" data-v="1">1 mol</button>
-  </div>
-</div>
-
+<div id="overlay"><div class="box"><h2>Diagnóstico de mão no celular</h2><p>Este teste mostra apenas se o celular está detectando a mão. Ao abrir a mão, a barra deve subir.</p><button id="go">INICIAR TESTE</button></div></div>
+<div id="ui"><div id="msg">Aguardando…</div><div id="meter"><div id="fill"></div></div></div>
+<video id="video" playsinline webkit-playsinline muted autoplay></video>
+<canvas id="canvas"></canvas>
 <script type="module">
 import { HandLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.34/vision_bundle.mjs";
-
-const video = document.getElementById('video');
-const canvas = document.getElementById('fxCanvas');
-const ctx = canvas.getContext('2d', { alpha: true });
-
-const startOverlay = document.getElementById('startOverlay');
-const errorOverlay = document.getElementById('errorOverlay');
-const errorText = document.getElementById('errorText');
-const startBtn = document.getElementById('startBtn');
-const retryBtn = document.getElementById('retryBtn');
-
-const statusBadge = document.getElementById('statusBadge');
-const handBadge = document.getElementById('handBadge');
-const modeBadge = document.getElementById('modeBadge');
-const header = document.getElementById('header');
-const numberDisplay = document.getElementById('numberDisplay');
-const molDisplay = document.getElementById('molDisplay');
-
-const sliderTrack = document.getElementById('sliderTrack');
-const sliderFill = document.getElementById('sliderFill');
-const sliderThumb = document.getElementById('sliderThumb');
-
-const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-const particleCount = isMobile ? 1200 : 2400;
-const detectEveryMs = isMobile ? 95 : 70;
-
-let handLandmarker = null;
-let streamRef = null;
-let rafId = 0;
-let running = false;
-let booting = false;
-
-let modelValue = 0;
-let touchValue = 0;
-let smoothValue = 0;
-let manualUntil = 0;
-let handSeenAt = 0;
-let lastDetectAt = 0;
-let lastFrameTime = 0;
-let usingHand = false;
-
-const particles = [];
-for (let i = 0; i < particleCount; i++) {
-  particles.push({
-    x: Math.random(), y: Math.random(),
-    vx: (Math.random() - 0.5) * 0.0009,
-    vy: (Math.random() - 0.5) * 0.0009,
-    size: 1.5 + Math.random() * 2.5,
-    a: 0.35 + Math.random() * 0.45
-  });
+const video=document.getElementById('video');
+const canvas=document.getElementById('canvas');
+const ctx=canvas.getContext('2d');
+const overlay=document.getElementById('overlay');
+const go=document.getElementById('go');
+const msg=document.getElementById('msg');
+const fill=document.getElementById('fill');
+let tracker=null, raf=0, running=false, last=0, val=0;
+function resize(){canvas.width=innerWidth; canvas.height=innerHeight;}
+function op(hand){
+ const w=hand[0], i=hand[5], p=hand[17];
+ const palm=(Math.hypot(w.x-i.x,w.y-i.y)+Math.hypot(w.x-p.x,w.y-p.y))/2||0.0001;
+ const tips=[hand[8],hand[12],hand[16],hand[20]];
+ const avg=tips.reduce((a,t)=>a+Math.hypot(w.x-t.x,w.y-t.y),0)/4;
+ return Math.max(0, Math.min(1, (avg/palm-1.15)/1.55));
 }
-
-function setStatus(text, error = false) {
-  statusBadge.textContent = text;
-  statusBadge.classList.toggle('error', error);
+function loop(now){
+ if(!running)return;
+ if(video.readyState>=2 && now-last>90){
+  last=now;
+  try{
+   const r=tracker.detectForVideo(video, now);
+   ctx.clearRect(0,0,canvas.width,canvas.height);
+   if(r?.landmarks?.length){
+    val += (op(r.landmarks[0])-val)*0.2;
+    msg.textContent='Mão detectada';
+    fill.style.width=(val*100).toFixed(1)+'%';
+    const hand=r.landmarks[0];
+    ctx.strokeStyle='#00f2ff'; ctx.lineWidth=2;
+    for(const pt of hand){ ctx.beginPath(); ctx.arc((1-pt.x)*canvas.width, pt.y*canvas.height, 5, 0, Math.PI*2); ctx.stroke(); }
+   } else {
+    msg.textContent='Sem mão detectada';
+   }
+  }catch(e){ msg.textContent='Erro no detector'; }
+ }
+ raf=requestAnimationFrame(loop);
 }
-
-function showError(message) {
-  errorText.textContent = message;
-  errorOverlay.hidden = false;
-  startOverlay.style.display = 'none';
-  setStatus('Status: erro ao iniciar', true);
-  running = false;
-  cancelAnimationFrame(rafId);
-}
-
-function hideError() {
-  errorOverlay.hidden = true;
-  setStatus('Status: carregando…');
-}
-
-function formatSci(num) {
-  const s = num.toExponential(3);
-  const [m, e] = s.split('e+');
-  return `${m.replace('.', ',')} x 10<sup>${e}</sup>`;
-}
-
-function setValue(v, source = 'touch') {
-  const clamped = Math.max(0, Math.min(1, v));
-  if (source === 'touch') {
-    touchValue = clamped;
-    manualUntil = performance.now() + 2500;
-    modeBadge.textContent = 'Modo: toque';
-  } else if (source === 'hand') {
-    modelValue = clamped;
-    handSeenAt = performance.now();
-    usingHand = true;
-    if (performance.now() > manualUntil) {
-      modeBadge.textContent = 'Modo: mão';
-    }
-  }
-}
-
-function activeTarget() {
-  if (performance.now() < manualUntil) return touchValue;
-  if (performance.now() - handSeenAt < 900) return modelValue;
-  usingHand = false;
-  return touchValue;
-}
-
-function updateDisplay(v) {
-  const fill = `${(v * 100).toFixed(1)}%`;
-  sliderFill.style.height = fill;
-  sliderThumb.style.bottom = fill;
-
-  if (v < 0.03) {
-    numberDisplay.innerHTML = '1 MOLÉCULA';
-    molDisplay.innerHTML = '1,66 x 10<sup>-24</sup> mol';
-    header.classList.remove('reached');
-    return;
-  }
-
-  if (v > 0.97) {
-    numberDisplay.innerHTML = '6,022 x 10<sup>23</sup>';
-    molDisplay.innerHTML = '1,0000 mol';
-    header.classList.add('reached');
-    return;
-  }
-
-  header.classList.remove('reached');
-  const N = Math.pow(10, v * 23.7797);
-  const mol = N / 6.02214e23;
-  numberDisplay.innerHTML = formatSci(N);
-  molDisplay.innerHTML = (mol < 0.0001 ? mol.toExponential(2).replace('.', ',') : mol.toFixed(4).replace('.', ',')) + ' mol';
-}
-
-function resize() {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  canvas.width = Math.floor(w * Math.min(window.devicePixelRatio || 1, 1.5));
-  canvas.height = Math.floor(h * Math.min(window.devicePixelRatio || 1, 1.5));
-  canvas.style.width = w + 'px';
-  canvas.style.height = h + 'px';
-  ctx.setTransform(canvas.width / w, 0, 0, canvas.height / h, 0, 0);
-}
-
-function drawParticles(v) {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  ctx.clearRect(0, 0, w, h);
-
-  const active = Math.max(1, Math.floor(1 + v * (particleCount - 1)));
-  for (let i = 0; i < active; i++) {
-    const p = particles[i];
-    p.x += p.vx * (1 + v * 1.5);
-    p.y += p.vy * (1 + v * 1.5);
-    if (p.x < 0 || p.x > 1) p.vx *= -1;
-    if (p.y < 0 || p.y > 1) p.vy *= -1;
-    p.x = Math.max(0, Math.min(1, p.x));
-    p.y = Math.max(0, Math.min(1, p.y));
-
-    const x = (w * 0.5) + (p.x - 0.5) * (80 + v * 180);
-    const y = (h * 0.56) + (p.y - 0.5) * (80 + v * 180);
-    const color = v > 0.97 ? `rgba(255,215,0,${p.a})` : `rgba(0,242,255,${p.a})`;
-    ctx.beginPath();
-    ctx.fillStyle = color;
-    ctx.arc(x, y, p.size * (0.8 + v * 0.6), 0, Math.PI * 2);
-    ctx.fill();
-  }
-}
-
-function opennessFromLandmarks(hand) {
-  const wrist = hand[0];
-  const indexMcp = hand[5];
-  const pinkyMcp = hand[17];
-  const tips = [hand[8], hand[12], hand[16], hand[20]];
-
-  const palm = (Math.hypot(wrist.x - indexMcp.x, wrist.y - indexMcp.y) +
-                Math.hypot(wrist.x - pinkyMcp.x, wrist.y - pinkyMcp.y)) / 2 || 0.0001;
-
-  const avgTip = tips.reduce((acc, pt) => acc + Math.hypot(wrist.x - pt.x, wrist.y - pt.y), 0) / tips.length;
-  const ratio = avgTip / palm;
-
-  return Math.max(0, Math.min(1, (ratio - 1.15) / 1.55));
-}
-
-async function createTracker() {
-  const vision = await FilesetResolver.forVisionTasks(
-    'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.34/wasm'
-  );
-
-  const options = {
-    baseOptions: {
-      modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task'
-    },
-    runningMode: 'VIDEO',
-    numHands: 1,
-    minHandDetectionConfidence: 0.25,
-    minHandPresenceConfidence: 0.25,
-    minTrackingConfidence: 0.25
-  };
-
-  try {
-    setStatus('Status: carregando rastreador (GPU)…');
-    return await HandLandmarker.createFromOptions(vision, {
-      ...options,
-      baseOptions: { ...options.baseOptions, delegate: 'GPU' }
-    });
-  } catch (e) {
-    setStatus('Status: carregando rastreador (CPU)…');
-    return await HandLandmarker.createFromOptions(vision, {
-      ...options,
-      baseOptions: { ...options.baseOptions, delegate: 'CPU' }
-    });
-  }
-}
-
-async function startCamera() {
-  if (!window.isSecureContext) {
-    throw new Error('Abra a página em HTTPS. Em smartphone, a câmera normalmente falha em file:// ou HTTP.');
-  }
-  if (!navigator.mediaDevices?.getUserMedia) {
-    throw new Error('Este navegador não oferece getUserMedia para a câmera.');
-  }
-
-  setStatus('Status: solicitando câmera…');
-  streamRef = await navigator.mediaDevices.getUserMedia({
-    audio: false,
-    video: {
-      facingMode: 'user',
-      width: { ideal: isMobile ? 640 : 960 },
-      height: { ideal: isMobile ? 480 : 720 }
-    }
-  });
-
-  video.srcObject = streamRef;
-  await new Promise((resolve, reject) => {
-    const onMeta = async () => {
-      try {
-        await video.play();
-        resolve();
-      } catch (e) {
-        reject(e);
-      }
-    };
-    video.addEventListener('loadedmetadata', onMeta, { once: true });
-  });
-}
-
-function stopCamera() {
-  if (streamRef) {
-    streamRef.getTracks().forEach(t => t.stop());
-    streamRef = null;
-  }
-}
-
-function detectHand(now) {
-  if (!handLandmarker || video.readyState < 2) return;
-  if (now - lastDetectAt < detectEveryMs) return;
-  lastDetectAt = now;
-
-  try {
-    const result = handLandmarker.detectForVideo(video, now);
-    if (result?.landmarks?.length) {
-      const v = opennessFromLandmarks(result.landmarks[0]);
-      setValue(v, 'hand');
-      handBadge.textContent = 'Rastreamento: mão detectada';
-    } else {
-      handBadge.textContent = 'Rastreamento: sem mão';
-    }
-  } catch (e) {
-    handBadge.textContent = 'Rastreamento: indisponível';
-  }
-}
-
-function loop(now) {
-  if (!running) return;
-  const dt = Math.min(40, now - (lastFrameTime || now));
-  lastFrameTime = now;
-
-  detectHand(now);
-  const target = activeTarget();
-  smoothValue += (target - smoothValue) * (0.12 + Math.min(0.08, dt / 200));
-  updateDisplay(smoothValue);
-  drawParticles(smoothValue);
-
-  rafId = requestAnimationFrame(loop);
-}
-
-function setSliderFromClientY(clientY) {
-  const rect = sliderTrack.getBoundingClientRect();
-  const ratio = 1 - ((clientY - rect.top) / rect.height);
-  setValue(ratio, 'touch');
-}
-
-sliderTrack.addEventListener('pointerdown', (e) => {
-  sliderTrack.setPointerCapture(e.pointerId);
-  setSliderFromClientY(e.clientY);
-});
-sliderTrack.addEventListener('pointermove', (e) => {
-  if (e.pressure > 0 || e.buttons > 0) setSliderFromClientY(e.clientY);
-});
-sliderTrack.addEventListener('click', (e) => setSliderFromClientY(e.clientY));
-
-document.querySelectorAll('#quickBtns button').forEach(btn => {
-  btn.addEventListener('click', () => setValue(Number(btn.dataset.v), 'touch'));
-});
-
-async function init() {
-  if (booting) return;
-  booting = true;
-  hideError();
-  startBtn.disabled = true;
-  startBtn.textContent = 'CARREGANDO...';
-
-  try {
-    handLandmarker = await createTracker();
-    await startCamera();
-    resize();
-    running = true;
-    startOverlay.style.display = 'none';
-    errorOverlay.hidden = true;
-    setStatus('Status: simulação ativa');
-    handBadge.textContent = 'Rastreamento: aguardando mão';
-    modeBadge.textContent = 'Modo: toque';
-    setValue(0, 'touch');
-    cancelAnimationFrame(rafId);
-    rafId = requestAnimationFrame(loop);
-  } catch (e) {
-    console.error(e);
-    showError(e?.message || 'Falha desconhecida ao iniciar.');
-  } finally {
-    startBtn.disabled = false;
-    startBtn.textContent = 'INICIAR';
-    booting = false;
-  }
-}
-
-startBtn.addEventListener('click', init);
-retryBtn.addEventListener('click', () => {
-  errorOverlay.hidden = true;
-  init();
-});
-
-window.addEventListener('resize', resize);
-window.addEventListener('orientationchange', () => setTimeout(resize, 200));
-document.addEventListener('visibilitychange', async () => {
-  if (document.hidden) {
-    running = false;
-    cancelAnimationFrame(rafId);
-    setStatus('Status: pausado');
-  } else if (video.srcObject) {
-    try { await video.play(); } catch {}
-    running = true;
-    setStatus('Status: simulação ativa');
-    cancelAnimationFrame(rafId);
-    rafId = requestAnimationFrame(loop);
-  }
-});
-window.addEventListener('beforeunload', stopCamera);
-
-resize();
-updateDisplay(0);
-drawParticles(0);
+go.onclick=async()=>{
+ try{
+  if(!isSecureContext) throw new Error('Abra em HTTPS');
+  const vision=await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.34/wasm');
+  tracker=await HandLandmarker.createFromOptions(vision,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task', delegate:'CPU'}, runningMode:'VIDEO', numHands:1, minHandDetectionConfidence:.25, minHandPresenceConfidence:.25, minTrackingConfidence:.25});
+  const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:640}, height:{ideal:480}}, audio:false});
+  video.srcObject=stream;
+  await new Promise(res=>video.onloadedmetadata=async()=>{await video.play();res();});
+  overlay.style.display='none'; running=true; resize(); loop(performance.now());
+ }catch(e){ alert(e.message); }
+};
+addEventListener('resize',resize); resize();
 </script>
 </body>
 </html>
