@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Laboratório de Avogadro - ultraleve</title>
+  <title>Laboratório de Avogadro - didático</title>
   <style>
     :root{
       --accent:#00f2ff;
@@ -12,6 +12,7 @@
       --panel:rgba(0,0,0,.72);
       --soft:#9cefff;
       --danger:#ff6b6b;
+      --green:#7dffb2;
     }
     *{box-sizing:border-box}
     html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;font-family:Segoe UI,Arial,sans-serif;color:#fff;-webkit-tap-highlight-color:transparent}
@@ -23,22 +24,37 @@
     header{
       position:absolute;top:env(safe-area-inset-top,0);left:0;right:0;z-index:20;
       background:var(--panel);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-      border-bottom:2px solid var(--accent);padding:12px 14px 10px;text-align:center
+      border-bottom:2px solid var(--accent);padding:10px 12px 8px;text-align:center
     }
     header.reached{border-bottom-color:var(--gold)}
-    .title{font-size:.76rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;opacity:.82}
-    #numberDisplay{margin-top:4px;font-size:clamp(1.35rem,4vw,2rem);font-weight:800;color:var(--accent);font-family:"Courier New",monospace;line-height:1.08}
+    .title{font-size:.74rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;opacity:.82}
+    #numberDisplay{margin-top:3px;font-size:clamp(1.28rem,4.2vw,1.95rem);font-weight:800;color:var(--accent);font-family:"Courier New",monospace;line-height:1.08}
     header.reached #numberDisplay{color:var(--gold);text-shadow:0 0 18px rgba(255,215,0,.45)}
-    #molDisplay{font-size:clamp(.9rem,2.8vw,1rem);color:var(--soft)}
+    #molDisplay{font-size:clamp(.88rem,2.7vw,1rem);color:var(--soft)}
+    #scaleLabel{margin-top:4px;font-size:.88rem;color:#d8fbff;font-weight:600}
+    #ordersLabel{margin-top:2px;font-size:.8rem;color:#b9d7dc;opacity:.95}
     sup{font-size:.62em}
+
+    #milestoneWrap{margin-top:8px;padding:0 8px}
+    #milestoneBar{position:relative;height:12px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden}
+    #milestoneFill{position:absolute;left:0;top:0;bottom:0;width:0%;background:linear-gradient(90deg,var(--accent),#44f7ff,var(--gold))}
+    .marker{position:absolute;top:50%;width:2px;height:16px;background:rgba(255,255,255,.55);transform:translate(-50%,-50%)}
+    .markerLabel{position:absolute;top:16px;transform:translateX(-50%);font-size:.62rem;opacity:.9;white-space:nowrap}
+
+    #conceptPill{
+      position:absolute;left:10px;right:72px;top:calc(env(safe-area-inset-top,0) + 148px);z-index:24;
+      padding:9px 12px;border-radius:16px;background:rgba(0,0,0,.52);border:1px solid rgba(255,255,255,.12);
+      backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-size:.82rem;line-height:1.35
+    }
+
     #hud{position:absolute;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0));z-index:30;display:flex;justify-content:space-between;gap:8px;align-items:flex-end}
-    .pill{padding:8px 10px;border-radius:999px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.12);font-size:.83rem;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+    .pill{padding:8px 10px;border-radius:999px;background:rgba(0,0,0,.58);border:1px solid rgba(255,255,255,.12);font-size:.82rem;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
     #fallbackWrap{display:flex;gap:8px;align-items:flex-end}
-    #slider{width:54px;height:min(42vh,320px);border-radius:32px;background:rgba(25,25,25,.85);border:1px solid rgba(255,255,255,.12);padding:6px;position:relative;touch-action:none;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+    #slider{width:54px;height:min(39vh,300px);border-radius:32px;background:rgba(25,25,25,.82);border:1px solid rgba(255,255,255,.12);padding:6px;position:relative;touch-action:none;box-shadow:0 8px 24px rgba(0,0,0,.25)}
     #sliderFill{position:absolute;left:6px;right:6px;bottom:6px;height:0%;border-radius:24px;background:linear-gradient(180deg,var(--gold),var(--accent))}
     #sliderThumb{position:absolute;left:50%;bottom:0%;transform:translate(-50%,50%);width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(0,242,255,.35)}
     #miniBtns{display:flex;flex-direction:column;gap:6px}
-    #miniBtns button{border:none;border-radius:999px;padding:8px 10px;font-size:.8rem;font-weight:700;background:rgba(0,0,0,.65);color:#fff;border:1px solid rgba(255,255,255,.12)}
+    #miniBtns button{border:none;border-radius:999px;padding:8px 10px;font-size:.78rem;font-weight:700;background:rgba(0,0,0,.65);color:#fff;border:1px solid rgba(255,255,255,.12)}
     #overlay,#error{position:absolute;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.92)}
     #error[hidden]{display:none}
     .card{width:min(92vw,460px);padding:22px 18px;border-radius:22px;background:rgba(14,14,14,.94);border:1px solid rgba(255,255,255,.12);box-shadow:0 12px 42px rgba(0,0,0,.45);text-align:center}
@@ -46,6 +62,12 @@
     p{margin:0 0 14px;line-height:1.45;font-size:.98rem;opacity:.94}
     button.action{border:none;border-radius:999px;padding:14px 22px;min-height:48px;font-size:1rem;font-weight:800;background:var(--accent);color:#000}
     .warn{color:#ffd59a;font-size:.92rem}
+
+    @media (max-height:700px){
+      #conceptPill{top:calc(env(safe-area-inset-top,0) + 138px);font-size:.78rem;padding:8px 10px}
+      .markerLabel{font-size:.58rem}
+      #slider{height:min(34vh,250px)}
+    }
   </style>
 </head>
 <body>
@@ -53,8 +75,9 @@
   <div id="overlay">
     <div class="card">
       <h1>Laboratório de Avogadro</h1>
-      <p>Versão ultraleve para smartphone. Aqui o rastreamento da mão roda separado da animação para não travar.</p>
-      <p class="warn">Abra em HTTPS. Se a mão oscilar em algum aparelho, o controle lateral continua funcionando.</p>
+      <p><strong>Feche a mão = 1 molécula.</strong><br><strong>Abra a mão = aproxima 1 mol.</strong></p>
+      <p>Agora a simulação mostra melhor a <strong>escala</strong>, as <strong>ordens de grandeza</strong> e trava o valor ao atingir o <strong>número de Avogadro</strong>.</p>
+      <p class="warn">Nuvem de pontos = representação ilustrativa. Não são todas as moléculas individualmente.</p>
       <button id="startBtn" class="action" type="button">INICIAR</button>
     </div>
   </div>
@@ -71,7 +94,26 @@
     <div class="title">Laboratório de Avogadro</div>
     <div id="numberDisplay">1 MOLÉCULA</div>
     <div id="molDisplay">1,66 x 10<sup>-24</sup> mol</div>
+    <div id="scaleLabel">Escala: unidade</div>
+    <div id="ordersLabel">Faltam cerca de 23,8 ordens de grandeza para chegar a 1 mol.</div>
+    <div id="milestoneWrap">
+      <div id="milestoneBar">
+        <div id="milestoneFill"></div>
+        <div class="marker" style="left:0%"></div>
+        <div class="marker" style="left:25.2%"></div>
+        <div class="marker" style="left:50.5%"></div>
+        <div class="marker" style="left:75.7%"></div>
+        <div class="marker" style="left:100%"></div>
+      </div>
+      <div class="markerLabel" style="left:0%">1</div>
+      <div class="markerLabel" style="left:25.2%">10<sup>6</sup></div>
+      <div class="markerLabel" style="left:50.5%">10<sup>12</sup></div>
+      <div class="markerLabel" style="left:75.7%">10<sup>18</sup></div>
+      <div class="markerLabel" style="left:100%">1 mol</div>
+    </div>
   </header>
+
+  <div id="conceptPill">Abra a mão lentamente para ver a quantidade crescer em <strong>escala exponencial</strong>. Observe que um pequeno gesto produz saltos enormes na quantidade de partículas.</div>
 
   <video id="video" playsinline webkit-playsinline muted autoplay></video>
   <canvas id="fx"></canvas>
@@ -81,11 +123,12 @@
       <div class="pill" id="statusBadge">Status: aguardando início</div>
       <div class="pill" id="trackBadge" style="margin-top:8px">Rastreamento: aguardando</div>
       <div class="pill" id="modeBadge" style="margin-top:8px">Modo: aguardando</div>
+      <div class="pill" id="hintBadge" style="margin-top:8px">Representação visual: nuvem ilustrativa</div>
     </div>
     <div id="fallbackWrap">
       <div id="miniBtns">
         <button data-v="0">1 molécula</button>
-        <button data-v="0.5">meio</button>
+        <button data-v="0.505">10<sup>12</sup></button>
         <button data-v="1">1 mol</button>
       </div>
       <div id="slider" aria-label="Controle manual">
@@ -110,18 +153,23 @@ const retryBtn = document.getElementById('retryBtn');
 const header = document.getElementById('header');
 const numberDisplay = document.getElementById('numberDisplay');
 const molDisplay = document.getElementById('molDisplay');
+const scaleLabel = document.getElementById('scaleLabel');
+const ordersLabel = document.getElementById('ordersLabel');
+const milestoneFill = document.getElementById('milestoneFill');
 const statusBadge = document.getElementById('statusBadge');
 const trackBadge = document.getElementById('trackBadge');
 const modeBadge = document.getElementById('modeBadge');
+const conceptPill = document.getElementById('conceptPill');
 const slider = document.getElementById('slider');
 const sliderFill = document.getElementById('sliderFill');
 const sliderThumb = document.getElementById('sliderThumb');
 
 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 const dprMax = isMobile ? 1.25 : 1.6;
-const particleCount = isMobile ? 180 : 320;
+const particleCount = isMobile ? 190 : 330;
 const detectIntervalMs = isMobile ? 140 : 100;
 const drawFPS = isMobile ? 24 : 30;
+const AVOGADRO_EXP = 23.7797;
 
 let tracker = null;
 let streamRef = null;
@@ -136,21 +184,23 @@ let touchValue = 0;
 let smoothValue = 0;
 let trackingActive = false;
 let plume = { cx: 0.5, cy: 0.58 };
+let avogadroLock = false;
+let avogadroStableSince = 0;
 
 const particles = Array.from({ length: particleCount }, () => ({
   x: (Math.random() - 0.5),
   y: (Math.random() - 0.5),
   vx: (Math.random() - 0.5) * 0.003,
   vy: (Math.random() - 0.5) * 0.003,
-  s: 1.2 + Math.random() * 3,
-  a: 0.25 + Math.random() * 0.45,
+  s: 1.1 + Math.random() * 3.2,
+  a: 0.18 + Math.random() * 0.42,
   j: Math.random() * Math.PI * 2
 }));
 
 function setStatus(text, error = false) {
   statusBadge.textContent = text;
   statusBadge.style.borderColor = error ? 'rgba(255,107,107,.45)' : 'rgba(255,255,255,.12)';
-  statusBadge.style.background = error ? 'rgba(110,0,0,.35)' : 'rgba(0,0,0,.6)';
+  statusBadge.style.background = error ? 'rgba(110,0,0,.35)' : 'rgba(0,0,0,.58)';
 }
 
 function fail(message) {
@@ -168,28 +218,79 @@ function formatSci(num) {
   return `${m.replace('.', ',')} x 10<sup>${e}</sup>`;
 }
 
+function describeScale(exp) {
+  if (exp < 1) return 'Escala: unidade';
+  if (exp < 3) return 'Escala: dezenas e centenas';
+  if (exp < 6) return 'Escala: milhares';
+  if (exp < 9) return 'Escala: milhões';
+  if (exp < 12) return 'Escala: bilhões';
+  if (exp < 15) return 'Escala: trilhões';
+  if (exp < 18) return 'Escala: quadrilhões';
+  if (exp < 21) return 'Escala: quintilhões';
+  if (exp < 23.4) return 'Escala: sextilhões';
+  return 'Escala: número de Avogadro';
+}
+
+function updateConcept(v, exp) {
+  if (v < 0.04) {
+    conceptPill.innerHTML = 'Feche a mão: começamos com <strong>1 molécula</strong>, a menor unidade desta simulação.';
+    return;
+  }
+  if (v > 0.97) {
+    conceptPill.innerHTML = 'Você atingiu <strong>1 mol</strong>: cerca de <strong>6,022 × 10<sup>23</sup></strong> entidades. Esse é o <strong>número de Avogadro</strong>.';
+    return;
+  }
+  if (exp < 6) {
+    conceptPill.innerHTML = 'Ainda estamos longe de 1 mol. Mesmo assim, a quantidade já cresce muito rápido por causa da <strong>escala exponencial</strong>.';
+    return;
+  }
+  if (exp < 12) {
+    conceptPill.innerHTML = 'Agora já entramos em valores gigantescos para a intuição humana: <strong>milhões a bilhões</strong>.';
+    return;
+  }
+  if (exp < 18) {
+    conceptPill.innerHTML = 'Perceba como um gesto pequeno da mão leva a saltos de <strong>trilhões a quadrilhões</strong>.';
+    return;
+  }
+  conceptPill.innerHTML = 'Estamos na faixa dos <strong>quintilhões/sextilhões</strong>. Falta relativamente pouco, em ordens de grandeza, para chegar a <strong>1 mol</strong>.';
+}
+
 function updateUI(v) {
   const fill = `${(v * 100).toFixed(1)}%`;
   sliderFill.style.height = fill;
   sliderThumb.style.bottom = fill;
+  milestoneFill.style.width = fill;
 
   if (v < 0.03) {
     numberDisplay.innerHTML = '1 MOLÉCULA';
     molDisplay.innerHTML = '1,66 x 10<sup>-24</sup> mol';
+    scaleLabel.textContent = 'Escala: unidade';
+    ordersLabel.textContent = 'Faltam cerca de 23,8 ordens de grandeza para chegar a 1 mol.';
     header.classList.remove('reached');
+    updateConcept(v, 0);
     return;
   }
+
   if (v > 0.97) {
     numberDisplay.innerHTML = '6,022 x 10<sup>23</sup>';
     molDisplay.innerHTML = '1,0000 mol';
+    scaleLabel.textContent = 'Escala: número de Avogadro';
+    ordersLabel.textContent = 'Valor de Avogadro atingido.';
     header.classList.add('reached');
+    updateConcept(v, AVOGADRO_EXP);
     return;
   }
+
   header.classList.remove('reached');
-  const N = Math.pow(10, v * 23.7797);
+  const exp = v * AVOGADRO_EXP;
+  const N = Math.pow(10, exp);
   const mol = N / 6.02214e23;
+  const ordersLeft = Math.max(0, AVOGADRO_EXP - exp).toFixed(1).replace('.', ',');
   numberDisplay.innerHTML = formatSci(N);
   molDisplay.innerHTML = (mol < 0.0001 ? mol.toExponential(2).replace('.', ',') : mol.toFixed(4).replace('.', ',')) + ' mol';
+  scaleLabel.textContent = describeScale(exp);
+  ordersLabel.textContent = `Faltam cerca de ${ordersLeft} ordens de grandeza para chegar a 1 mol.`;
+  updateConcept(v, exp);
 }
 
 function resize() {
@@ -205,7 +306,9 @@ function resize() {
 
 function setManual(v) {
   touchValue = Math.max(0, Math.min(1, v));
-  manualUntil = performance.now() + 2500;
+  manualUntil = performance.now() + 3000;
+  avogadroLock = false;
+  avogadroStableSince = 0;
   modeBadge.textContent = 'Modo: toque';
 }
 
@@ -213,14 +316,44 @@ function setFromHand(v) {
   handValue = Math.max(0, Math.min(1, v));
   handSeenAt = performance.now();
   trackingActive = true;
-  if (performance.now() > manualUntil) modeBadge.textContent = 'Modo: mão';
+  if (performance.now() > manualUntil) modeBadge.textContent = avogadroLock ? 'Modo: mão (travado em 1 mol)' : 'Modo: mão';
 }
 
-function currentTarget() {
+function currentRawTarget() {
   if (performance.now() < manualUntil) return touchValue;
   if (performance.now() - handSeenAt < 1100) return handValue;
   trackingActive = false;
   return touchValue;
+}
+
+function currentTarget() {
+  const raw = currentRawTarget();
+
+  if (performance.now() < manualUntil) return raw;
+
+  if (avogadroLock) {
+    if (raw < 0.82) {
+      avogadroLock = false;
+      avogadroStableSince = 0;
+      modeBadge.textContent = 'Modo: mão';
+      return raw;
+    }
+    return 1;
+  }
+
+  if (raw > 0.965) {
+    if (!avogadroStableSince) avogadroStableSince = performance.now();
+    if (performance.now() - avogadroStableSince > 450) {
+      avogadroLock = true;
+      modeBadge.textContent = 'Modo: mão (travado em 1 mol)';
+      return 1;
+    }
+  } else {
+    avogadroStableSince = 0;
+  }
+
+  if (raw < 0.02) return 0;
+  return raw;
 }
 
 function setSliderFromY(clientY) {
@@ -255,7 +388,7 @@ function openness(hand) {
     score += (dTip - dMcp) / palmWidth;
   }
 
-  const thumbTip = hand[4], thumbIp = hand[3], indexTip = hand[8];
+  const thumbTip = hand[4], indexTip = hand[8];
   const thumbOpen = Math.hypot(thumbTip.x - indexTip.x, thumbTip.y - indexTip.y) / palmWidth;
   score += Math.max(0, thumbOpen - 0.25) * 0.8;
 
@@ -338,16 +471,29 @@ function drawCloud(v) {
   ctx.clearRect(0, 0, w, h);
 
   const active = Math.max(1, Math.floor(1 + v * (particleCount - 1)));
-  const spread = 70 + v * 150;
+  const spread = 55 + v * 165;
   const baseX = plume.cx * w;
   const baseY = plume.cy * h;
   const gold = v > 0.97;
 
+  const glow = ctx.createRadialGradient(baseX, baseY, 10, baseX, baseY, spread * 1.1);
+  if (gold) {
+    glow.addColorStop(0, 'rgba(255,215,0,0.20)');
+    glow.addColorStop(1, 'rgba(255,215,0,0.00)');
+  } else {
+    glow.addColorStop(0, 'rgba(0,242,255,0.16)');
+    glow.addColorStop(1, 'rgba(0,242,255,0.00)');
+  }
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(baseX, baseY, spread * 1.1, 0, Math.PI * 2);
+  ctx.fill();
+
   for (let i = 0; i < active; i++) {
     const p = particles[i];
-    p.j += 0.02 + v * 0.02;
-    p.x += p.vx * (1 + v * 0.6);
-    p.y += p.vy * (1 + v * 0.6);
+    p.j += 0.018 + v * 0.02;
+    p.x += p.vx * (1 + v * 0.5);
+    p.y += p.vy * (1 + v * 0.5);
     if (p.x < -1 || p.x > 1) p.vx *= -1;
     if (p.y < -1 || p.y > 1) p.vy *= -1;
 
@@ -369,7 +515,7 @@ function paint(now) {
   if (!lastPaint || now - lastPaint >= minGap) {
     lastPaint = now;
     const t = currentTarget();
-    smoothValue += (t - smoothValue) * 0.12;
+    smoothValue += (t - smoothValue) * (t > 0.96 ? 0.07 : 0.12);
     updateUI(smoothValue);
     drawCloud(smoothValue);
   }
@@ -395,6 +541,8 @@ async function init() {
     modeBadge.textContent = 'Modo: toque';
     setManual(0);
     smoothValue = 0;
+    avogadroLock = false;
+    avogadroStableSince = 0;
     detectTimer = setInterval(detectStep, detectIntervalMs);
     cancelAnimationFrame(drawTimer);
     drawTimer = requestAnimationFrame(paint);
