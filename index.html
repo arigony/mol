@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Laboratório de Avogadro - premium nuvem bela</title>
+  <title>Laboratório de Avogadro - V5 educacional</title>
   <style>
     :root{
       --accent:#00f2ff;
@@ -24,22 +24,23 @@
     header{
       position:absolute;top:env(safe-area-inset-top,0);left:0;right:0;z-index:20;
       background:var(--panel);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-      border-bottom:2px solid var(--accent);padding:10px 12px 8px;text-align:center
+      border-bottom:2px solid var(--accent);padding:10px 12px 10px;text-align:center
     }
     header.reached{border-bottom-color:var(--gold)}
-    .title{font-size:.74rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;opacity:.82}
-    #numberDisplay{margin-top:3px;font-size:clamp(1.28rem,4.2vw,1.95rem);font-weight:800;color:var(--accent);font-family:"Courier New",monospace;line-height:1.08}
+    .title{font-size:.76rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;opacity:.82}
+    #numberDisplay{margin-top:3px;font-size:clamp(1.34rem,4.5vw,2rem);font-weight:800;color:var(--accent);font-family:"Courier New",monospace;line-height:1.08}
     header.reached #numberDisplay{color:var(--gold);text-shadow:0 0 18px rgba(255,215,0,.45)}
-    #molDisplay{font-size:clamp(.88rem,2.7vw,1rem);color:var(--soft)}
+    #molDisplay{font-size:clamp(.9rem,3vw,1.03rem);color:var(--soft)}
     #scaleLabel{margin-top:4px;font-size:.88rem;color:#d8fbff;font-weight:600}
     #ordersLabel{margin-top:2px;font-size:.8rem;color:#b9d7dc;opacity:.95}
     sup{font-size:.62em}
 
-    #milestoneWrap{margin-top:8px;padding:0 8px}
-    #milestoneBar{position:relative;height:12px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden}
+    #milestoneWrap{margin-top:10px;padding:0 8px 2px}
+    #milestoneBar{position:relative;height:14px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden}
     #milestoneFill{position:absolute;left:0;top:0;bottom:0;width:0%;background:linear-gradient(90deg,var(--accent),#44f7ff,var(--gold))}
-    .marker{position:absolute;top:50%;width:2px;height:16px;background:rgba(255,255,255,.55);transform:translate(-50%,-50%)}
-    .markerLabel{position:absolute;top:16px;transform:translateX(-50%);font-size:.62rem;opacity:.9;white-space:nowrap}
+    .marker{position:absolute;top:50%;width:2px;height:18px;background:rgba(255,255,255,.60);transform:translate(-50%,-50%)}
+    #milestoneLabels{display:flex;justify-content:space-between;gap:8px;margin-top:7px;font-size:.76rem;font-weight:700;color:#dffcff}
+    #milestoneLabels span{white-space:nowrap;opacity:.95}
 
     #conceptPill{
       position:absolute;left:10px;right:10px;top:calc(env(safe-area-inset-top,0) + 148px);z-index:24;
@@ -64,8 +65,8 @@
     .warn{color:#ffd59a;font-size:.92rem}
 
     @media (max-height:700px){
-      #conceptPill{top:calc(env(safe-area-inset-top,0) + 138px);font-size:.78rem;padding:8px 10px}
-      .markerLabel{font-size:.58rem}
+      #conceptPill{top:calc(env(safe-area-inset-top,0) + 144px);font-size:.79rem;padding:8px 10px}
+      #milestoneLabels{font-size:.69rem}
       #slider{height:min(34vh,250px)}
     }
   </style>
@@ -75,8 +76,8 @@
   <div id="overlay">
     <div class="card">
       <h1>Laboratório de Avogadro</h1>
-      <p><strong>Feche a mão = 1 molécula.</strong><br><strong>Abra a mão = aproxima 1 mol.</strong></p>
-      <p>Agora a simulação mostra melhor a <strong>escala</strong>, as <strong>ordens de grandeza</strong> e trava o valor ao atingir o <strong>número de Avogadro</strong>.</p>
+      <p><strong>Feche a mão = 1 molécula.</strong><br><strong>Abra a mão = a quantidade cresce até 1 mol.</strong></p>
+      <p>Esta V5 destaca melhor as <strong>etapas intermediárias</strong>: uma molécula, poucas moléculas, muitas moléculas e, por fim, o <strong>número de Avogadro</strong>.</p>
       <p class="warn">Nuvem de pontos = representação ilustrativa. Não são todas as moléculas individualmente.</p>
       <button id="startBtn" class="action" type="button">INICIAR</button>
     </div>
@@ -105,15 +106,17 @@
         <div class="marker" style="left:75.7%"></div>
         <div class="marker" style="left:100%"></div>
       </div>
-      <div class="markerLabel" style="left:0%">1</div>
-      <div class="markerLabel" style="left:25.2%">10<sup>6</sup></div>
-      <div class="markerLabel" style="left:50.5%">10<sup>12</sup></div>
-      <div class="markerLabel" style="left:75.7%">10<sup>18</sup></div>
-      <div class="markerLabel" style="left:100%">1 mol</div>
+      <div id="milestoneLabels">
+        <span>1</span>
+        <span>10<sup>6</sup></span>
+        <span>10<sup>12</sup></span>
+        <span>10<sup>18</sup></span>
+        <span>1 mol</span>
+      </div>
     </div>
   </header>
 
-  <div id="conceptPill">Abra a mão lentamente para ver a quantidade crescer em <strong>escala exponencial</strong>. Observe que um pequeno gesto produz saltos enormes na quantidade de partículas.</div>
+  <div id="conceptPill">Fechado = <strong>1 molécula</strong>. Abrindo a mão, surgem <strong>poucas moléculas</strong>, depois <strong>muitas</strong>, até chegar a <strong>1 mol</strong>.</div>
 
   <video id="video" playsinline webkit-playsinline muted autoplay></video>
   <canvas id="fx"></canvas>
@@ -238,26 +241,34 @@ function describeScale(exp) {
 
 function updateConcept(v, exp) {
   if (v < 0.04) {
-    conceptPill.innerHTML = 'Feche a mão: começamos com <strong>1 molécula</strong>, a menor unidade desta simulação.';
+    conceptPill.innerHTML = 'Fechado: <strong>1 molécula</strong>.';
     return;
   }
-  if (v > 0.97) {
-    conceptPill.innerHTML = 'Você atingiu <strong>1 mol</strong>: cerca de <strong>6,022 × 10<sup>23</sup></strong> entidades. Esse é o <strong>número de Avogadro</strong>.';
+  if (v < 0.16) {
+    conceptPill.innerHTML = 'Abrindo a mão: aparecem <strong>poucas moléculas visíveis</strong>.';
+    return;
+  }
+  if (v < 0.34) {
+    conceptPill.innerHTML = 'Agora já vemos <strong>dezenas a centenas</strong> de partículas na representação.';
     return;
   }
   if (exp < 6) {
-    conceptPill.innerHTML = 'Ainda estamos longe de 1 mol. Mesmo assim, a quantidade já cresce muito rápido por causa da <strong>escala exponencial</strong>.';
+    conceptPill.innerHTML = 'A quantidade cresce muito rápido: já passamos por <strong>milhares</strong> e seguimos subindo.';
     return;
   }
   if (exp < 12) {
-    conceptPill.innerHTML = 'Agora já entramos em valores gigantescos para a intuição humana: <strong>milhões a bilhões</strong>.';
+    conceptPill.innerHTML = 'Entramos na faixa de <strong>milhões a bilhões</strong>.';
     return;
   }
   if (exp < 18) {
-    conceptPill.innerHTML = 'Perceba como um gesto pequeno da mão leva a saltos de <strong>trilhões a quadrilhões</strong>.';
+    conceptPill.innerHTML = 'Um pequeno gesto já leva a <strong>trilhões e quadrilhões</strong>.';
     return;
   }
-  conceptPill.innerHTML = 'Estamos na faixa dos <strong>quintilhões/sextilhões</strong>. Falta relativamente pouco, em ordens de grandeza, para chegar a <strong>1 mol</strong>.';
+  if (v > 0.97) {
+    conceptPill.innerHTML = 'Chegada final: <strong>1 mol = 6,022 × 10<sup>23</sup></strong> entidades.';
+    return;
+  }
+  conceptPill.innerHTML = 'Agora estamos muito perto de <strong>1 mol</strong>: faixa dos <strong>quintilhões/sextilhões</strong>.';
 }
 
 function updateUI(v) {
@@ -400,12 +411,17 @@ function openness(hand) {
   return Math.max(0, Math.min(1, (score - 1.0) / 4.2));
 }
 
-function trackCenter(hand) {
+function trackCenter(hand, openValue) {
   const pts = [0,5,9,13,17].map(i => hand[i]);
-  const cx = pts.reduce((a,p)=>a+p.x,0)/pts.length;
-  const cy = pts.reduce((a,p)=>a+p.y,0)/pts.length;
-  plume.cx += (1 - cx - plume.cx) * 0.18;
-  plume.cy += (cy - plume.cy) * 0.18;
+  const palmCx = pts.reduce((a,p)=>a+p.x,0)/pts.length;
+  const palmCy = pts.reduce((a,p)=>a+p.y,0)/pts.length;
+  const pinchCx = (hand[4].x + hand[8].x) / 2;
+  const pinchCy = (hand[4].y + hand[8].y) / 2;
+  const lowZone = Math.max(0, 1 - openValue / 0.16);
+  const cx = palmCx * (1 - lowZone) + pinchCx * lowZone;
+  const cy = palmCy * (1 - lowZone) + pinchCy * lowZone;
+  plume.cx += (1 - cx - plume.cx) * (lowZone > 0 ? 0.22 : 0.18);
+  plume.cy += (cy - plume.cy) * (lowZone > 0 ? 0.22 : 0.18);
 }
 
 async function buildTracker() {
@@ -460,7 +476,7 @@ function detectStep() {
     if (result?.landmarks?.length) {
       const hand = result.landmarks[0];
       setFromHand(openness(hand));
-      trackCenter(hand);
+      trackCenter(hand, handValue);
       trackBadge.textContent = 'Rastreamento: mão detectada';
     } else {
       trackBadge.textContent = 'Rastreamento: sem mão';
@@ -475,96 +491,106 @@ function drawCloud(v) {
   const h = window.innerHeight;
   ctx.clearRect(0, 0, w, h);
 
-  const active = Math.max(1, Math.floor(1 + v * (particleCount - 1)));
-  const spread = 56 + v * 172;
   const baseX = plume.cx * w;
   const baseY = plume.cy * h;
   const gold = v > 0.97;
   const t = performance.now() * 0.001;
 
+  const stageFew = Math.max(0, Math.min(1, (v - 0.05) / 0.12));
+  const stageMany = Math.max(0, Math.min(1, (v - 0.16) / 0.18));
+  const cloudFadeIn = Math.max(0, Math.min(1, (v - 0.24) / 0.18));
+  const singleMoleculeZone = Math.max(0, 1 - v / 0.14);
+
+  let active = 1;
+  if (v < 0.08) active = 1;
+  else if (v < 0.16) active = Math.max(3, Math.floor(3 + stageFew * 9));
+  else if (v < 0.28) active = Math.max(12, Math.floor(12 + stageMany * 48));
+  else active = Math.max(60, Math.floor(60 + v * (particleCount - 60)));
+
+  let spread = 34;
+  if (v < 0.08) spread = 18 + v * 80;
+  else if (v < 0.18) spread = 34 + stageFew * 24;
+  else if (v < 0.34) spread = 54 + stageMany * 52;
+  else spread = 82 + v * 146;
+
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
 
-  const singleMoleculeZone = Math.max(0, 1 - v / 0.14);
-  const cloudFadeIn = Math.max(0, Math.min(1, (v - 0.05) / 0.18));
-
   if (singleMoleculeZone > 0.001) {
-    const pulse = 0.90 + 0.10 * Math.sin(t * 3.0);
-    const moleculeR = 2.0 + singleMoleculeZone * 2.1; // ~1/3 do tamanho anterior
-    const haloR = moleculeR * (1.85 + 0.16 * pulse);
+    const pulse = 0.92 + 0.08 * Math.sin(t * 2.6);
+    const moleculeR = 2.2 + singleMoleculeZone * 1.6;
+    const haloR = moleculeR * (1.65 + 0.14 * pulse);
 
     const halo = ctx.createRadialGradient(baseX, baseY, 0, baseX, baseY, haloR);
-    halo.addColorStop(0, `rgba(120,235,255,${0.18 * singleMoleculeZone})`);
-    halo.addColorStop(0.45, `rgba(0,210,255,${0.10 * singleMoleculeZone})`);
+    halo.addColorStop(0, `rgba(120,235,255,${0.15 * singleMoleculeZone})`);
+    halo.addColorStop(0.55, `rgba(0,210,255,${0.08 * singleMoleculeZone})`);
     halo.addColorStop(1, 'rgba(0,210,255,0)');
     ctx.fillStyle = halo;
     ctx.beginPath();
     ctx.arc(baseX, baseY, haloR, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.strokeStyle = `rgba(120,235,255,${0.16 * singleMoleculeZone})`;
-    ctx.lineWidth = 0.9;
+    ctx.strokeStyle = `rgba(120,235,255,${0.13 * singleMoleculeZone})`;
+    ctx.lineWidth = 0.7;
     ctx.beginPath();
-    ctx.arc(baseX, baseY, moleculeR * (1.45 + 0.04 * Math.sin(t * 2.0)), 0, Math.PI * 2);
+    ctx.arc(baseX, baseY, moleculeR * (1.33 + 0.04 * Math.sin(t * 1.6)), 0, Math.PI * 2);
     ctx.stroke();
 
     const moleculeGrad = ctx.createRadialGradient(
-      baseX - moleculeR * 0.18, baseY - moleculeR * 0.18, moleculeR * 0.15,
+      baseX - moleculeR * 0.18, baseY - moleculeR * 0.18, moleculeR * 0.1,
       baseX, baseY, moleculeR
     );
-    moleculeGrad.addColorStop(0, `rgba(210,250,255,${0.95 * singleMoleculeZone})`);
-    moleculeGrad.addColorStop(0.35, `rgba(65,220,255,${0.96 * singleMoleculeZone})`);
+    moleculeGrad.addColorStop(0, `rgba(215,250,255,${0.95 * singleMoleculeZone})`);
+    moleculeGrad.addColorStop(0.38, `rgba(60,220,255,${0.96 * singleMoleculeZone})`);
     moleculeGrad.addColorStop(1, `rgba(0,170,235,${0.98 * singleMoleculeZone})`);
     ctx.fillStyle = moleculeGrad;
     ctx.beginPath();
     ctx.arc(baseX, baseY, moleculeR, 0, Math.PI * 2);
     ctx.fill();
-
-    ctx.fillStyle = `rgba(225,250,255,${0.28 * singleMoleculeZone})`;
-    ctx.beginPath();
-    ctx.arc(baseX - moleculeR * 0.18, baseY - moleculeR * 0.20, moleculeR * 0.16, 0, Math.PI * 2);
-    ctx.fill();
   }
 
-  const coreGlow = ctx.createRadialGradient(baseX, baseY, 10, baseX, baseY, spread * 1.2);
+  const fogStrength = Math.max(cloudFadeIn, stageMany * 0.55);
+  const coreGlow = ctx.createRadialGradient(baseX, baseY, 10, baseX, baseY, spread * 1.1);
   if (gold) {
-    coreGlow.addColorStop(0, `rgba(255,246,185,${0.22 * cloudFadeIn})`);
-    coreGlow.addColorStop(0.38, `rgba(255,215,0,${0.12 * cloudFadeIn})`);
+    coreGlow.addColorStop(0, `rgba(255,246,185,${0.22 * Math.max(cloudFadeIn, 0.35)})`);
+    coreGlow.addColorStop(0.38, `rgba(255,215,0,${0.12 * Math.max(cloudFadeIn, 0.35)})`);
     coreGlow.addColorStop(1, 'rgba(255,215,0,0)');
   } else {
-    coreGlow.addColorStop(0, `rgba(245,255,255,${0.16 * cloudFadeIn})`);
-    coreGlow.addColorStop(0.3, `rgba(120,245,255,${0.12 * cloudFadeIn})`);
-    coreGlow.addColorStop(0.68, `rgba(0,200,255,${0.07 * cloudFadeIn})`);
+    coreGlow.addColorStop(0, `rgba(245,255,255,${0.12 * fogStrength})`);
+    coreGlow.addColorStop(0.3, `rgba(120,245,255,${0.09 * fogStrength})`);
+    coreGlow.addColorStop(0.68, `rgba(0,200,255,${0.06 * fogStrength})`);
     coreGlow.addColorStop(1, 'rgba(0,242,255,0)');
   }
   ctx.fillStyle = coreGlow;
   ctx.beginPath();
-  ctx.arc(baseX, baseY, spread * 1.2, 0, Math.PI * 2);
+  ctx.arc(baseX, baseY, spread * 1.1, 0, Math.PI * 2);
   ctx.fill();
 
-  const mistLayers = [
-    { dx: -0.24, dy: -0.11, r: 0.70, a1: 0.08, a2: 0.00 },
-    { dx: 0.20, dy: 0.07, r: 0.63, a1: 0.06, a2: 0.00 },
-    { dx: 0.03, dy: -0.18, r: 0.52, a1: 0.05, a2: 0.00 }
-  ];
+  if (fogStrength > 0.04) {
+    const mistLayers = [
+      { dx: -0.24, dy: -0.11, r: 0.70, a1: 0.08 },
+      { dx: 0.20, dy: 0.07, r: 0.63, a1: 0.06 },
+      { dx: 0.03, dy: -0.18, r: 0.52, a1: 0.05 }
+    ];
 
-  for (const layer of mistLayers) {
-    const gx = baseX + spread * layer.dx;
-    const gy = baseY + spread * layer.dy;
-    const gr = spread * layer.r;
-    const g = ctx.createRadialGradient(gx, gy, 4, gx, gy, gr);
-    if (gold) {
-      g.addColorStop(0, `rgba(255,238,150,${layer.a1 * cloudFadeIn})`);
-      g.addColorStop(1, 'rgba(255,215,0,0)');
-    } else {
-      g.addColorStop(0, `rgba(170,250,255,${layer.a1 * cloudFadeIn})`);
-      g.addColorStop(0.5, `rgba(65,225,255,${(layer.a1 * 0.45) * cloudFadeIn})`);
-      g.addColorStop(1, 'rgba(0,242,255,0)');
+    for (const layer of mistLayers) {
+      const gx = baseX + spread * layer.dx;
+      const gy = baseY + spread * layer.dy;
+      const gr = spread * layer.r;
+      const g = ctx.createRadialGradient(gx, gy, 4, gx, gy, gr);
+      if (gold) {
+        g.addColorStop(0, `rgba(255,238,150,${layer.a1 * Math.max(cloudFadeIn, 0.35)})`);
+        g.addColorStop(1, 'rgba(255,215,0,0)');
+      } else {
+        g.addColorStop(0, `rgba(170,250,255,${layer.a1 * fogStrength})`);
+        g.addColorStop(0.5, `rgba(65,225,255,${(layer.a1 * 0.45) * fogStrength})`);
+        g.addColorStop(1, 'rgba(0,242,255,0)');
+      }
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(gx, gy, gr, 0, Math.PI * 2);
+      ctx.fill();
     }
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(gx, gy, gr, 0, Math.PI * 2);
-    ctx.fill();
   }
 
   for (let i = 0; i < active; i++) {
@@ -576,47 +602,47 @@ function drawCloud(v) {
     if (p.x < -1 || p.x > 1) p.vx *= -1;
     if (p.y < -1 || p.y > 1) p.vy *= -1;
 
-    const orbitX = Math.cos(p.j * p.orbit) * 0.18 * p.depth;
-    const orbitY = Math.sin(p.j * (0.82 + p.depth * 0.34)) * 0.15 * p.depth;
+    const compactness = v < 0.18 ? 0.34 : (v < 0.34 ? 0.56 : 1);
+    const orbitX = Math.cos(p.j * p.orbit) * 0.18 * p.depth * compactness;
+    const orbitY = Math.sin(p.j * (0.82 + p.depth * 0.34)) * 0.15 * p.depth * compactness;
     const x = baseX + (p.x + orbitX) * spread;
     const y = baseY + (p.y + orbitY) * spread;
     const twinkle = 0.82 + 0.18 * Math.sin(p.pulse + t * 1.9);
-    const r = p.s * (0.68 + v * 0.76) * p.depth * twinkle;
-    const alpha = Math.min(0.95, p.a * (0.84 + 0.22 * twinkle)) * cloudFadeIn;
+    const sizeFactor = v < 0.16 ? 0.55 : (v < 0.3 ? 0.72 : 1);
+    const r = p.s * (0.56 + v * 0.72) * p.depth * twinkle * sizeFactor;
+    const alphaBase = v < 0.16 ? 0.55 + stageFew * 0.35 : 1;
+    const alpha = Math.min(0.95, p.a * (0.84 + 0.22 * twinkle) * alphaBase) * Math.max(fogStrength, stageFew * 0.6, 0.15);
 
     if (alpha < 0.01) continue;
 
-    if (p.glow) {
-      const g = ctx.createRadialGradient(x, y, 0, x, y, r * 3.4);
+    if (p.glow && (v > 0.18 || i < 12)) {
+      const glowRadius = r * (v < 0.16 ? 2.1 : 3.2);
+      const g = ctx.createRadialGradient(x, y, 0, x, y, glowRadius);
       if (gold) {
-        g.addColorStop(0, `rgba(255,250,225,${alpha * 0.34})`);
-        g.addColorStop(0.45, `rgba(255,215,0,${alpha * 0.16})`);
+        g.addColorStop(0, `rgba(255,250,225,${alpha * 0.32})`);
+        g.addColorStop(0.45, `rgba(255,215,0,${alpha * 0.15})`);
         g.addColorStop(1, 'rgba(255,215,0,0)');
       } else {
-        g.addColorStop(0, `rgba(255,255,255,${alpha * 0.26})`);
-        g.addColorStop(0.32, `rgba(150,245,255,${alpha * 0.18})`);
+        g.addColorStop(0, `rgba(255,255,255,${alpha * 0.24})`);
+        g.addColorStop(0.32, `rgba(150,245,255,${alpha * 0.17})`);
         g.addColorStop(0.62, `rgba(0,210,255,${alpha * 0.10})`);
         g.addColorStop(1, 'rgba(0,242,255,0)');
       }
       ctx.fillStyle = g;
       ctx.beginPath();
-      ctx.arc(x, y, r * 3.4, 0, Math.PI * 2);
+      ctx.arc(x, y, glowRadius, 0, Math.PI * 2);
       ctx.fill();
     }
 
     ctx.beginPath();
-    ctx.fillStyle = gold
-      ? `rgba(255,220,60,${alpha})`
-      : `rgba(40,230,255,${alpha})`;
+    ctx.fillStyle = gold ? `rgba(255,220,60,${alpha})` : `rgba(40,230,255,${alpha})`;
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();
 
-    if (p.depth > 1.03) {
+    if (p.depth > 1.03 && v > 0.16) {
       ctx.beginPath();
-      ctx.fillStyle = gold
-        ? `rgba(255,252,235,${alpha * 0.34})`
-        : `rgba(255,255,255,${alpha * 0.28})`;
-      ctx.arc(x, y, r * 0.44, 0, Math.PI * 2);
+      ctx.fillStyle = gold ? `rgba(255,252,235,${alpha * 0.34})` : `rgba(255,255,255,${alpha * 0.26})`;
+      ctx.arc(x, y, r * 0.42, 0, Math.PI * 2);
       ctx.fill();
     }
   }
