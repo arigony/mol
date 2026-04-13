@@ -2,536 +2,555 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Laboratório de Avogadro - Mobile</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Laboratório de Avogadro — Mobile Híbrido</title>
   <style>
-    :root {
-      --accent: #00f2ff;
-      --gold: #ffd700;
-      --bg: #000;
-      --panel: rgba(0, 0, 0, 0.78);
-      --text: #fff;
-      --text-soft: #a0f9ff;
-      --danger: #ff6b6b;
+    :root{
+      --accent:#00f2ff;
+      --gold:#ffd700;
+      --panel:rgba(0,0,0,.72);
+      --panel2:rgba(0,0,0,.55);
+      --text:#fff;
+      --soft:#b8fbff;
+      --danger:#ff6b6b;
+    }
+    *{box-sizing:border-box}
+    html,body{
+      margin:0;
+      width:100%;
+      height:100%;
+      background:#000;
+      color:var(--text);
+      font-family:Arial, Helvetica, sans-serif;
+      overflow:hidden;
+      touch-action:none;
+      -webkit-tap-highlight-color:transparent;
+    }
+    #app{position:fixed; inset:0; width:100vw; height:100dvh; background:#000; overflow:hidden}
+    #video, #fxCanvas{
+      position:absolute; inset:0; width:100%; height:100%;
+    }
+    #video{object-fit:cover; transform:scaleX(-1); background:#000; z-index:1}
+    #fxCanvas{z-index:5; pointer-events:none}
+
+    header{
+      position:absolute; left:0; right:0; top:0;
+      z-index:20; text-align:center;
+      padding:calc(10px + env(safe-area-inset-top, 0px)) 12px 10px;
+      background:linear-gradient(to bottom, rgba(0,0,0,.82), rgba(0,0,0,.55));
+      border-bottom:2px solid var(--accent);
+      backdrop-filter:blur(10px);
+      -webkit-backdrop-filter:blur(10px);
+    }
+    header.reached{border-bottom-color:var(--gold)}
+    .title{font-size:.78rem; font-weight:900; letter-spacing:2px; opacity:.88; text-transform:uppercase}
+    #numberDisplay{
+      margin-top:4px;
+      font-family:"Courier New", monospace;
+      font-size:clamp(1.3rem, 4.8vw, 2rem);
+      font-weight:700;
+      color:var(--accent);
+      line-height:1.12;
+    }
+    header.reached #numberDisplay{color:var(--gold); text-shadow:0 0 18px rgba(255,215,0,.45)}
+    #molDisplay{margin-top:3px; font-size:clamp(.84rem, 2.7vw, 1rem); color:var(--soft)}
+    #modeLine{margin-top:5px; font-size:.78rem; opacity:.92}
+    .pill{
+      display:inline-block; padding:5px 9px; border-radius:999px;
+      background:rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.12)
     }
 
-    * { box-sizing: border-box; }
+    #startOverlay, #errorOverlay{
+      position:absolute; inset:0; z-index:100;
+      display:flex; align-items:center; justify-content:center;
+      background:rgba(0,0,0,.9); padding:20px;
+    }
+    #errorOverlay[hidden]{display:none}
+    .panel{
+      width:min(92vw, 470px);
+      border-radius:22px;
+      padding:20px 18px;
+      background:rgba(14,14,14,.95);
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow:0 16px 50px rgba(0,0,0,.45);
+      text-align:center;
+    }
+    .panel h1{margin:0 0 10px; font-size:1.15rem}
+    .panel p{margin:0 0 14px; line-height:1.45; font-size:.97rem; opacity:.92}
+    button{
+      appearance:none; border:none; border-radius:999px; cursor:pointer;
+      min-height:46px; padding:12px 20px; font-size:1rem; font-weight:800;
+    }
+    .primary{background:var(--accent); color:#000}
+    .ghost{background:rgba(255,255,255,.08); color:#fff; border:1px solid rgba(255,255,255,.14)}
 
-    html, body {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: var(--bg);
-      font-family: "Segoe UI", Arial, sans-serif;
-      color: var(--text);
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
+    #hudLeft{
+      position:absolute; left:10px; bottom:calc(12px + env(safe-area-inset-bottom,0px)); z-index:20;
+      display:flex; flex-direction:column; gap:8px; max-width:68vw;
+    }
+    .badge{
+      display:inline-flex; align-items:center; gap:6px;
+      width:max-content; max-width:100%;
+      padding:8px 12px; border-radius:999px;
+      background:var(--panel2); border:1px solid rgba(255,255,255,.12);
+      backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+      font-size:.82rem;
+    }
+    .badge.error{border-color:rgba(255,107,107,.45); background:rgba(110,0,0,.35)}
+
+    #controls{
+      position:absolute; right:10px; top:50%; transform:translateY(-50%);
+      z-index:20; display:flex; flex-direction:column; align-items:center; gap:10px;
+      user-select:none;
+    }
+    #sliderWrap{
+      width:62px; height:min(54dvh, 430px);
+      border-radius:40px; padding:10px;
+      background:var(--panel);
+      border:1px solid rgba(255,255,255,.12);
+      backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+      display:flex; justify-content:center; align-items:center;
+    }
+    #sliderTrack{
+      position:relative; width:16px; height:100%; border-radius:999px;
+      background:linear-gradient(to top, rgba(0,242,255,.12), rgba(0,242,255,.85));
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+    }
+    #sliderFill{
+      position:absolute; left:0; right:0; bottom:0; height:0%; border-radius:999px;
+      background:linear-gradient(to top, var(--accent), var(--gold));
+      box-shadow:0 0 18px rgba(0,242,255,.35);
+    }
+    #sliderThumb{
+      position:absolute; left:50%; transform:translate(-50%,50%);
+      bottom:0%; width:34px; height:34px; border-radius:50%;
+      background:#fff; border:4px solid var(--accent);
+      box-shadow:0 4px 18px rgba(0,0,0,.3);
+    }
+    #sliderLabel{
+      width:76px; text-align:center; font-size:.78rem; line-height:1.15;
+      padding:8px 6px; border-radius:14px;
+      background:var(--panel); border:1px solid rgba(255,255,255,.12)
     }
 
-    body {
-      position: fixed;
-      inset: 0;
+    #quickBtns{
+      position:absolute; left:50%; transform:translateX(-50%);
+      bottom:calc(12px + env(safe-area-inset-bottom,0px)); z-index:20;
+      display:flex; gap:8px; flex-wrap:wrap; justify-content:center;
+      max-width:calc(100vw - 120px); padding:0 8px;
     }
+    #quickBtns button{min-height:38px; padding:8px 12px; font-size:.82rem}
 
-    #app {
-      position: fixed;
-      inset: 0;
-      width: 100vw;
-      height: 100dvh;
-      overflow: hidden;
-      background: #000;
-    }
-
-    #video,
-    #glCanvas {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-    }
-
-    #video {
-      object-fit: cover;
-      transform: scaleX(-1);
-      z-index: 1;
-      background: #000;
-    }
-
-    #glCanvas {
-      pointer-events: none;
-      z-index: 10;
-    }
-
-    header {
-      position: absolute;
-      top: env(safe-area-inset-top, 0);
-      left: 0;
-      right: 0;
-      z-index: 20;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      padding: 14px 16px 12px;
-      background: var(--panel);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-bottom: 2px solid var(--accent);
-      text-align: center;
-    }
-
-    header.target-reached {
-      border-bottom-color: var(--gold);
-    }
-
-    .title {
-      font-size: 0.82rem;
-      font-weight: 900;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      opacity: 0.82;
-    }
-
-    #numberDisplay {
-      font-size: clamp(1.4rem, 4vw, 2rem);
-      font-weight: 700;
-      color: var(--accent);
-      font-family: "Courier New", monospace;
-      line-height: 1.1;
-    }
-
-    header.target-reached #numberDisplay {
-      color: var(--gold);
-      text-shadow: 0 0 20px rgba(255, 215, 0, 0.55);
-    }
-
-    #molDisplay {
-      font-size: clamp(0.9rem, 2.8vw, 1rem);
-      color: var(--text-soft);
-    }
-
-    sup { font-size: 0.62em; }
-
-    #start-overlay,
-    #message-overlay {
-      position: absolute;
-      inset: 0;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      background: rgba(0, 0, 0, 0.92);
-    }
-
-    #message-overlay[hidden] {
-      display: none;
-    }
-
-    .panel {
-      width: min(92vw, 460px);
-      padding: 22px 18px;
-      border-radius: 20px;
-      background: rgba(14, 14, 14, 0.94);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
-      text-align: center;
-    }
-
-    .panel h1 {
-      margin: 0 0 10px;
-      font-size: 1.2rem;
-      line-height: 1.25;
-    }
-
-    .panel p {
-      margin: 0 0 16px;
-      font-size: 0.98rem;
-      line-height: 1.45;
-      opacity: 0.9;
-    }
-
-    button {
-      appearance: none;
-      border: none;
-      border-radius: 999px;
-      padding: 14px 24px;
-      min-height: 48px;
-      font-size: 1rem;
-      font-weight: 800;
-      cursor: pointer;
-    }
-
-    #start-btn,
-    #retry-btn {
-      background: var(--accent);
-      color: #000;
-    }
-
-    #statusBadge {
-      position: absolute;
-      left: 12px;
-      bottom: calc(12px + env(safe-area-inset-bottom, 0));
-      z-index: 25;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: rgba(0, 0, 0, 0.65);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      font-size: 0.84rem;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-    }
-
-    #statusBadge.error {
-      color: #fff;
-      border-color: rgba(255, 107, 107, 0.45);
-      background: rgba(110, 0, 0, 0.38);
-    }
+    sup{font-size:.62em}
   </style>
 </head>
 <body>
-  <div id="app">
-    <div id="start-overlay">
-      <div class="panel">
-        <h1>Laboratório de Avogadro</h1>
-        <p>Toque para iniciar a câmera e a simulação. Em celular, abra este arquivo em HTTPS.</p>
-        <button id="start-btn" type="button">INICIAR SIMULAÇÃO</button>
-      </div>
+<div id="app">
+  <div id="startOverlay">
+    <div class="panel">
+      <h1>Laboratório de Avogadro</h1>
+      <p>Versão móvel híbrida: funciona por gesto da mão <strong>quando o rastreamento responder</strong> e também por <strong>toque no controle lateral</strong>, para garantir uso em aula.</p>
+      <p style="font-size:.88rem; opacity:.8">Abra em HTTPS no celular.</p>
+      <button id="startBtn" class="primary" type="button">INICIAR</button>
     </div>
-
-    <div id="message-overlay" hidden>
-      <div class="panel">
-        <h1 id="error-title">Não foi possível iniciar</h1>
-        <p id="error-text"></p>
-        <button id="retry-btn" type="button">TENTAR NOVAMENTE</button>
-      </div>
-    </div>
-
-    <header id="header">
-      <div class="title">Laboratório de Avogadro</div>
-      <div id="numberDisplay">1 MOLÉCULA</div>
-      <div id="molDisplay">1,66 x 10<sup>-24</sup> mol</div>
-    </header>
-
-    <video id="video" playsinline webkit-playsinline muted autoplay></video>
-    <canvas id="glCanvas"></canvas>
-    <div id="statusBadge">Aguardando início…</div>
   </div>
 
-  <script type="module">
-    import { HandLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.mjs";
-    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js";
+  <div id="errorOverlay" hidden>
+    <div class="panel">
+      <h1>Não foi possível iniciar</h1>
+      <p id="errorText"></p>
+      <button id="retryBtn" class="primary" type="button">TENTAR NOVAMENTE</button>
+    </div>
+  </div>
 
-    const video = document.getElementById("video");
-    const header = document.getElementById("header");
-    const startOverlay = document.getElementById("start-overlay");
-    const messageOverlay = document.getElementById("message-overlay");
-    const errorText = document.getElementById("error-text");
-    const startBtn = document.getElementById("start-btn");
-    const retryBtn = document.getElementById("retry-btn");
-    const statusBadge = document.getElementById("statusBadge");
-    const nDisp = document.getElementById("numberDisplay");
-    const mDisp = document.getElementById("molDisplay");
+  <header id="header">
+    <div class="title">Laboratório de Avogadro</div>
+    <div id="numberDisplay">1 MOLÉCULA</div>
+    <div id="molDisplay">1,66 x 10<sup>-24</sup> mol</div>
+    <div id="modeLine"><span class="pill" id="modeBadge">Modo: aguardando</span></div>
+  </header>
 
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const maxParticles = isMobile ? 2200 : 8000;
-    const particleSpeed = isMobile ? 0.010 : 0.018;
+  <video id="video" playsinline webkit-playsinline muted autoplay></video>
+  <canvas id="fxCanvas"></canvas>
 
-    let handLandmarker = null;
-    let animationId = null;
-    let running = false;
-    let initialized = false;
-    let smoothOpen = 0;
-    let lastVideoTime = -1;
-    let streamRef = null;
+  <div id="hudLeft">
+    <div class="badge" id="statusBadge">Status: aguardando início</div>
+    <div class="badge" id="handBadge">Rastreamento: sem mão</div>
+  </div>
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.z = 2.5;
+  <div id="controls">
+    <div id="sliderWrap">
+      <div id="sliderTrack">
+        <div id="sliderFill"></div>
+        <div id="sliderThumb"></div>
+      </div>
+    </div>
+    <div id="sliderLabel">toque<br>ou mão</div>
+  </div>
 
-    const renderer = new THREE.WebGLRenderer({
-      canvas: document.getElementById("glCanvas"),
-      alpha: true,
-      antialias: !isMobile,
-      powerPreference: "high-performance"
+  <div id="quickBtns">
+    <button type="button" class="ghost" data-v="0">1 molécula</button>
+    <button type="button" class="ghost" data-v="0.45">≈ 1 mmol</button>
+    <button type="button" class="ghost" data-v="1">1 mol</button>
+  </div>
+</div>
+
+<script type="module">
+import { HandLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.34/vision_bundle.mjs";
+
+const video = document.getElementById('video');
+const canvas = document.getElementById('fxCanvas');
+const ctx = canvas.getContext('2d', { alpha: true });
+
+const startOverlay = document.getElementById('startOverlay');
+const errorOverlay = document.getElementById('errorOverlay');
+const errorText = document.getElementById('errorText');
+const startBtn = document.getElementById('startBtn');
+const retryBtn = document.getElementById('retryBtn');
+
+const statusBadge = document.getElementById('statusBadge');
+const handBadge = document.getElementById('handBadge');
+const modeBadge = document.getElementById('modeBadge');
+const header = document.getElementById('header');
+const numberDisplay = document.getElementById('numberDisplay');
+const molDisplay = document.getElementById('molDisplay');
+
+const sliderTrack = document.getElementById('sliderTrack');
+const sliderFill = document.getElementById('sliderFill');
+const sliderThumb = document.getElementById('sliderThumb');
+
+const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+const particleCount = isMobile ? 1200 : 2400;
+const detectEveryMs = isMobile ? 95 : 70;
+
+let handLandmarker = null;
+let streamRef = null;
+let rafId = 0;
+let running = false;
+let booting = false;
+
+let modelValue = 0;
+let touchValue = 0;
+let smoothValue = 0;
+let manualUntil = 0;
+let handSeenAt = 0;
+let lastDetectAt = 0;
+let lastFrameTime = 0;
+let usingHand = false;
+
+const particles = [];
+for (let i = 0; i < particleCount; i++) {
+  particles.push({
+    x: Math.random(), y: Math.random(),
+    vx: (Math.random() - 0.5) * 0.0009,
+    vy: (Math.random() - 0.5) * 0.0009,
+    size: 1.5 + Math.random() * 2.5,
+    a: 0.35 + Math.random() * 0.45
+  });
+}
+
+function setStatus(text, error = false) {
+  statusBadge.textContent = text;
+  statusBadge.classList.toggle('error', error);
+}
+
+function showError(message) {
+  errorText.textContent = message;
+  errorOverlay.hidden = false;
+  startOverlay.style.display = 'none';
+  setStatus('Status: erro ao iniciar', true);
+  running = false;
+  cancelAnimationFrame(rafId);
+}
+
+function hideError() {
+  errorOverlay.hidden = true;
+  setStatus('Status: carregando…');
+}
+
+function formatSci(num) {
+  const s = num.toExponential(3);
+  const [m, e] = s.split('e+');
+  return `${m.replace('.', ',')} x 10<sup>${e}</sup>`;
+}
+
+function setValue(v, source = 'touch') {
+  const clamped = Math.max(0, Math.min(1, v));
+  if (source === 'touch') {
+    touchValue = clamped;
+    manualUntil = performance.now() + 2500;
+    modeBadge.textContent = 'Modo: toque';
+  } else if (source === 'hand') {
+    modelValue = clamped;
+    handSeenAt = performance.now();
+    usingHand = true;
+    if (performance.now() > manualUntil) {
+      modeBadge.textContent = 'Modo: mão';
+    }
+  }
+}
+
+function activeTarget() {
+  if (performance.now() < manualUntil) return touchValue;
+  if (performance.now() - handSeenAt < 900) return modelValue;
+  usingHand = false;
+  return touchValue;
+}
+
+function updateDisplay(v) {
+  const fill = `${(v * 100).toFixed(1)}%`;
+  sliderFill.style.height = fill;
+  sliderThumb.style.bottom = fill;
+
+  if (v < 0.03) {
+    numberDisplay.innerHTML = '1 MOLÉCULA';
+    molDisplay.innerHTML = '1,66 x 10<sup>-24</sup> mol';
+    header.classList.remove('reached');
+    return;
+  }
+
+  if (v > 0.97) {
+    numberDisplay.innerHTML = '6,022 x 10<sup>23</sup>';
+    molDisplay.innerHTML = '1,0000 mol';
+    header.classList.add('reached');
+    return;
+  }
+
+  header.classList.remove('reached');
+  const N = Math.pow(10, v * 23.7797);
+  const mol = N / 6.02214e23;
+  numberDisplay.innerHTML = formatSci(N);
+  molDisplay.innerHTML = (mol < 0.0001 ? mol.toExponential(2).replace('.', ',') : mol.toFixed(4).replace('.', ',')) + ' mol';
+}
+
+function resize() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  canvas.width = Math.floor(w * Math.min(window.devicePixelRatio || 1, 1.5));
+  canvas.height = Math.floor(h * Math.min(window.devicePixelRatio || 1, 1.5));
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  ctx.setTransform(canvas.width / w, 0, 0, canvas.height / h, 0, 0);
+}
+
+function drawParticles(v) {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  ctx.clearRect(0, 0, w, h);
+
+  const active = Math.max(1, Math.floor(1 + v * (particleCount - 1)));
+  for (let i = 0; i < active; i++) {
+    const p = particles[i];
+    p.x += p.vx * (1 + v * 1.5);
+    p.y += p.vy * (1 + v * 1.5);
+    if (p.x < 0 || p.x > 1) p.vx *= -1;
+    if (p.y < 0 || p.y > 1) p.vy *= -1;
+    p.x = Math.max(0, Math.min(1, p.x));
+    p.y = Math.max(0, Math.min(1, p.y));
+
+    const x = (w * 0.5) + (p.x - 0.5) * (80 + v * 180);
+    const y = (h * 0.56) + (p.y - 0.5) * (80 + v * 180);
+    const color = v > 0.97 ? `rgba(255,215,0,${p.a})` : `rgba(0,242,255,${p.a})`;
+    ctx.beginPath();
+    ctx.fillStyle = color;
+    ctx.arc(x, y, p.size * (0.8 + v * 0.6), 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function opennessFromLandmarks(hand) {
+  const wrist = hand[0];
+  const indexMcp = hand[5];
+  const pinkyMcp = hand[17];
+  const tips = [hand[8], hand[12], hand[16], hand[20]];
+
+  const palm = (Math.hypot(wrist.x - indexMcp.x, wrist.y - indexMcp.y) +
+                Math.hypot(wrist.x - pinkyMcp.x, wrist.y - pinkyMcp.y)) / 2 || 0.0001;
+
+  const avgTip = tips.reduce((acc, pt) => acc + Math.hypot(wrist.x - pt.x, wrist.y - pt.y), 0) / tips.length;
+  const ratio = avgTip / palm;
+
+  return Math.max(0, Math.min(1, (ratio - 1.15) / 1.55));
+}
+
+async function createTracker() {
+  const vision = await FilesetResolver.forVisionTasks(
+    'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.34/wasm'
+  );
+
+  const options = {
+    baseOptions: {
+      modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task'
+    },
+    runningMode: 'VIDEO',
+    numHands: 1,
+    minHandDetectionConfidence: 0.25,
+    minHandPresenceConfidence: 0.25,
+    minTrackingConfidence: 0.25
+  };
+
+  try {
+    setStatus('Status: carregando rastreador (GPU)…');
+    return await HandLandmarker.createFromOptions(vision, {
+      ...options,
+      baseOptions: { ...options.baseOptions, delegate: 'GPU' }
     });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2));
-    renderer.setSize(window.innerWidth, window.innerHeight, false);
-
-    const handGroup = new THREE.Group();
-    scene.add(handGroup);
-
-    const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(maxParticles * 3);
-    const velocities = new Float32Array(maxParticles * 3);
-
-    for (let i = 0; i < maxParticles; i++) {
-      const i3 = i * 3;
-      positions[i3] = (Math.random() - 0.5) * 0.8;
-      positions[i3 + 1] = (Math.random() - 0.5) * 0.8;
-      positions[i3 + 2] = (Math.random() - 0.5) * 0.8;
-
-      velocities[i3] = (Math.random() - 0.5) * particleSpeed;
-      velocities[i3 + 1] = (Math.random() - 0.5) * particleSpeed;
-      velocities[i3 + 2] = (Math.random() - 0.5) * particleSpeed;
-    }
-
-    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-
-    const material = new THREE.PointsMaterial({
-      color: 0x00f2ff,
-      size: isMobile ? 0.028 : 0.03,
-      transparent: true,
-      opacity: 0.95,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
+  } catch (e) {
+    setStatus('Status: carregando rastreador (CPU)…');
+    return await HandLandmarker.createFromOptions(vision, {
+      ...options,
+      baseOptions: { ...options.baseOptions, delegate: 'CPU' }
     });
+  }
+}
 
-    const points = new THREE.Points(geometry, material);
-    geometry.setDrawRange(0, 1);
-    handGroup.add(points);
+async function startCamera() {
+  if (!window.isSecureContext) {
+    throw new Error('Abra a página em HTTPS. Em smartphone, a câmera normalmente falha em file:// ou HTTP.');
+  }
+  if (!navigator.mediaDevices?.getUserMedia) {
+    throw new Error('Este navegador não oferece getUserMedia para a câmera.');
+  }
 
-    function setStatus(text, isError = false) {
-      statusBadge.textContent = text;
-      statusBadge.classList.toggle("error", isError);
+  setStatus('Status: solicitando câmera…');
+  streamRef = await navigator.mediaDevices.getUserMedia({
+    audio: false,
+    video: {
+      facingMode: 'user',
+      width: { ideal: isMobile ? 640 : 960 },
+      height: { ideal: isMobile ? 480 : 720 }
     }
+  });
 
-    function showError(message) {
-      running = false;
-      if (animationId) cancelAnimationFrame(animationId);
-      animationId = null;
-      errorText.textContent = message;
-      messageOverlay.hidden = false;
-      startOverlay.style.display = "none";
-      setStatus("Erro ao iniciar", true);
-    }
-
-    function hideError() {
-      messageOverlay.hidden = true;
-      setStatus("Carregando…");
-    }
-
-    function formatSci(num) {
-      const exp = num.toExponential(3).split("e+");
-      return `${exp[0].replace(".", ",")} x 10<sup>${exp[1]}</sup>`;
-    }
-
-    function updateUI() {
-      if (smoothOpen < 0.05) {
-        nDisp.innerHTML = "1 MOLÉCULA";
-        mDisp.innerHTML = "1,66 x 10<sup>-24</sup> mol";
-        geometry.setDrawRange(0, 1);
-        header.classList.remove("target-reached");
-        material.color.setHex(0x00f2ff);
-        return;
-      }
-
-      if (smoothOpen > 0.85) {
-        nDisp.innerHTML = "6,022 x 10<sup>23</sup>";
-        mDisp.innerHTML = "1,0000 mol";
-        geometry.setDrawRange(0, maxParticles);
-        header.classList.add("target-reached");
-        material.color.setHex(0xffd700);
-        return;
-      }
-
-      const N = Math.pow(10, smoothOpen * 23.7797);
-      const valMol = N / 6.02214e23;
-      nDisp.innerHTML = formatSci(N);
-      mDisp.innerHTML = (valMol < 0.0001
-        ? valMol.toExponential(2).replace(".", ",")
-        : valMol.toFixed(4).replace(".", ",")) + " mol";
-      geometry.setDrawRange(0, Math.max(1, Math.floor(smoothOpen * maxParticles)));
-      header.classList.remove("target-reached");
-      material.color.setHex(0x00f2ff);
-    }
-
-    function animate() {
-      if (!running) return;
-
-      if (handLandmarker && video.readyState >= 2 && video.currentTime !== lastVideoTime) {
-        lastVideoTime = video.currentTime;
-
-        try {
-          const results = handLandmarker.detectForVideo(video, performance.now());
-
-          if (results.landmarks && results.landmarks.length > 0) {
-            const hand = results.landmarks[0];
-            const aspect = window.innerWidth / window.innerHeight;
-            const targetX = (hand[9].x - 0.5) * -5 * aspect;
-            const targetY = -(hand[9].y - 0.5) * 7;
-
-            handGroup.position.x += (targetX - handGroup.position.x) * 0.18;
-            handGroup.position.y += (targetY - handGroup.position.y) * 0.18;
-
-            const dBase = Math.hypot(hand[0].x - hand[5].x, hand[0].y - hand[5].y) || 0.0001;
-            const dTip = Math.hypot(hand[0].x - hand[12].x, hand[0].y - hand[12].y);
-            const ratio = dTip / dBase;
-            const targetOpen = Math.max(0, Math.min(1, (ratio - 0.85) / 0.95));
-            smoothOpen += (targetOpen - smoothOpen) * 0.14;
-            updateUI();
-          }
-        } catch (err) {
-          console.error("Erro no detectForVideo:", err);
-        }
-      }
-
-      const pos = geometry.attributes.position.array;
-      for (let i = 0; i < maxParticles; i++) {
-        const i3 = i * 3;
-        pos[i3] += velocities[i3];
-        pos[i3 + 1] += velocities[i3 + 1];
-
-        if (Math.abs(pos[i3]) > 0.5) velocities[i3] *= -1;
-        if (Math.abs(pos[i3 + 1]) > 0.5) velocities[i3 + 1] *= -1;
-      }
-      geometry.attributes.position.needsUpdate = true;
-
-      renderer.render(scene, camera);
-      animationId = requestAnimationFrame(animate);
-    }
-
-    async function createHandLandmarker() {
-      const vision = await FilesetResolver.forVisionTasks(
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
-      );
-
-      const baseOptions = {
-        modelAssetPath:
-          "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"
-      };
-
+  video.srcObject = streamRef;
+  await new Promise((resolve, reject) => {
+    const onMeta = async () => {
       try {
-        setStatus("Carregando detector (GPU)…");
-        return await HandLandmarker.createFromOptions(vision, {
-          baseOptions: { ...baseOptions, delegate: "GPU" },
-          runningMode: "VIDEO",
-          numHands: 1
-        });
-      } catch (gpuError) {
-        console.warn("GPU indisponível, tentando CPU.", gpuError);
-        setStatus("Carregando detector (CPU)…");
-        return await HandLandmarker.createFromOptions(vision, {
-          baseOptions: { ...baseOptions, delegate: "CPU" },
-          runningMode: "VIDEO",
-          numHands: 1
-        });
+        await video.play();
+        resolve();
+      } catch (e) {
+        reject(e);
       }
+    };
+    video.addEventListener('loadedmetadata', onMeta, { once: true });
+  });
+}
+
+function stopCamera() {
+  if (streamRef) {
+    streamRef.getTracks().forEach(t => t.stop());
+    streamRef = null;
+  }
+}
+
+function detectHand(now) {
+  if (!handLandmarker || video.readyState < 2) return;
+  if (now - lastDetectAt < detectEveryMs) return;
+  lastDetectAt = now;
+
+  try {
+    const result = handLandmarker.detectForVideo(video, now);
+    if (result?.landmarks?.length) {
+      const v = opennessFromLandmarks(result.landmarks[0]);
+      setValue(v, 'hand');
+      handBadge.textContent = 'Rastreamento: mão detectada';
+    } else {
+      handBadge.textContent = 'Rastreamento: sem mão';
     }
+  } catch (e) {
+    handBadge.textContent = 'Rastreamento: indisponível';
+  }
+}
 
-    async function startCamera() {
-      if (!window.isSecureContext) {
-        throw new Error("Abra a página em HTTPS. Em smartphone, a câmera normalmente não funciona em file:// ou HTTP.");
-      }
+function loop(now) {
+  if (!running) return;
+  const dt = Math.min(40, now - (lastFrameTime || now));
+  lastFrameTime = now;
 
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("Este navegador não oferece suporte à câmera via getUserMedia.");
-      }
+  detectHand(now);
+  const target = activeTarget();
+  smoothValue += (target - smoothValue) * (0.12 + Math.min(0.08, dt / 200));
+  updateDisplay(smoothValue);
+  drawParticles(smoothValue);
 
-      setStatus("Solicitando câmera…");
+  rafId = requestAnimationFrame(loop);
+}
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: {
-          facingMode: "user",
-          width: { ideal: isMobile ? 640 : 960 },
-          height: { ideal: isMobile ? 480 : 720 }
-        }
-      });
+function setSliderFromClientY(clientY) {
+  const rect = sliderTrack.getBoundingClientRect();
+  const ratio = 1 - ((clientY - rect.top) / rect.height);
+  setValue(ratio, 'touch');
+}
 
-      streamRef = stream;
-      video.srcObject = stream;
+sliderTrack.addEventListener('pointerdown', (e) => {
+  sliderTrack.setPointerCapture(e.pointerId);
+  setSliderFromClientY(e.clientY);
+});
+sliderTrack.addEventListener('pointermove', (e) => {
+  if (e.pressure > 0 || e.buttons > 0) setSliderFromClientY(e.clientY);
+});
+sliderTrack.addEventListener('click', (e) => setSliderFromClientY(e.clientY));
 
-      await new Promise((resolve, reject) => {
-        const onLoaded = async () => {
-          try {
-            video.width = video.videoWidth || 640;
-            video.height = video.videoHeight || 480;
-            await video.play();
-            resolve();
-          } catch (err) {
-            reject(err);
-          }
-        };
+document.querySelectorAll('#quickBtns button').forEach(btn => {
+  btn.addEventListener('click', () => setValue(Number(btn.dataset.v), 'touch'));
+});
 
-        video.addEventListener("loadedmetadata", onLoaded, { once: true });
-      });
-    }
+async function init() {
+  if (booting) return;
+  booting = true;
+  hideError();
+  startBtn.disabled = true;
+  startBtn.textContent = 'CARREGANDO...';
 
-    async function init() {
-      if (initialized) return;
-      initialized = true;
-      hideError();
-      startBtn.disabled = true;
-      startBtn.textContent = "CARREGANDO...";
+  try {
+    handLandmarker = await createTracker();
+    await startCamera();
+    resize();
+    running = true;
+    startOverlay.style.display = 'none';
+    errorOverlay.hidden = true;
+    setStatus('Status: simulação ativa');
+    handBadge.textContent = 'Rastreamento: aguardando mão';
+    modeBadge.textContent = 'Modo: toque';
+    setValue(0, 'touch');
+    cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(loop);
+  } catch (e) {
+    console.error(e);
+    showError(e?.message || 'Falha desconhecida ao iniciar.');
+  } finally {
+    startBtn.disabled = false;
+    startBtn.textContent = 'INICIAR';
+    booting = false;
+  }
+}
 
-      try {
-        handLandmarker = await createHandLandmarker();
-        await startCamera();
+startBtn.addEventListener('click', init);
+retryBtn.addEventListener('click', () => {
+  errorOverlay.hidden = true;
+  init();
+});
 
-        startOverlay.style.display = "none";
-        messageOverlay.hidden = true;
-        running = true;
-        lastVideoTime = -1;
-        smoothOpen = 0;
-        updateUI();
-        setStatus("Simulação ativa");
-        animate();
-      } catch (err) {
-        console.error(err);
-        const msg = err && err.message ? err.message : "Falha desconhecida ao iniciar a simulação.";
-        showError(msg);
-      } finally {
-        startBtn.disabled = false;
-        startBtn.textContent = "INICIAR SIMULAÇÃO";
-        initialized = false;
-      }
-    }
+window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', () => setTimeout(resize, 200));
+document.addEventListener('visibilitychange', async () => {
+  if (document.hidden) {
+    running = false;
+    cancelAnimationFrame(rafId);
+    setStatus('Status: pausado');
+  } else if (video.srcObject) {
+    try { await video.play(); } catch {}
+    running = true;
+    setStatus('Status: simulação ativa');
+    cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(loop);
+  }
+});
+window.addEventListener('beforeunload', stopCamera);
 
-    function stopStream() {
-      if (streamRef) {
-        streamRef.getTracks().forEach(track => track.stop());
-        streamRef = null;
-      }
-    }
-
-    function onResize() {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2));
-      renderer.setSize(w, h, false);
-    }
-
-    startBtn.addEventListener("click", init);
-    retryBtn.addEventListener("click", () => {
-      messageOverlay.hidden = true;
-      init();
-    });
-
-    window.addEventListener("resize", onResize);
-    window.addEventListener("orientationchange", () => setTimeout(onResize, 200));
-
-    document.addEventListener("visibilitychange", async () => {
-      if (document.hidden) {
-        running = false;
-        if (animationId) cancelAnimationFrame(animationId);
-        animationId = null;
-        setStatus("Pausado");
-      } else if (video.srcObject && handLandmarker) {
-        try {
-          await video.play();
-        } catch {}
-        running = true;
-        setStatus("Simulação ativa");
-        animate();
-      }
-    });
-
-    window.addEventListener("beforeunload", stopStream);
-    onResize();
-  </script>
+resize();
+updateDisplay(0);
+drawParticles(0);
+</script>
 </body>
 </html>
