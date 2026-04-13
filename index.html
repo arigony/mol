@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Laboratório de Avogadro - Mobile Pro</title>
+  <style>
+    :root { --accent: #00f2ff; --gold: #ffd700; }
+    body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; color: white; height: 100vh; width: 100vw; }
+    
+    /* Ecrã de Início: Necessário para autorizar câmara no Mobile */
+    #start-overlay {
+      position: fixed; inset: 0; background: #000; z-index: 100;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    #start-btn {
+      padding: 15px 40px; font-size: 1.2rem; background: var(--accent); color: #000;
+      border: none; border-radius: 50px; font-weight: bold; cursor: pointer;
+    }
+
+    #video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); z-index: 1; }
+    canvas { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+    
+    header {
+      position: absolute; top: 0; left: 0; right: 0;
+      background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(12px);
+      padding: 15px; display: flex; flex-direction: column; align-items: center;
+      border-bottom: 2px solid var(--accent); z-index: 20;
+    }
+    .title { font-size: 0.9rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; opacity: 0.8; }
+    #numberDisplay { font-size: 1.8rem; font-weight: bold; color: var(--accent); font-family: 'Courier New', monospace; margin: 5px 0; }
+    #molDisplay { font-size: 1rem; color: #a0f9ff; }
+    
+    .target-reached #numberDisplay { color: var(--gold); text-shadow: 0 0 20px rgba(255, 215, 0, 0.6); }
+    .target-reached header { border-bottom-color: var(--gold); }
+    sup { font-size: 0.6em; }
+  </style>
+</head>
+<body>
+
+  <div id="start-overlay">
+    <button id="start-btn">INICIAR SIMULAÇÃO</button>
+  </div>
+
+  <header id="header">
+    <div class="title">Laboratório de Avogadro</div>
+    <div id="numberDisplay">1 MOLÉCULA</div>
+    <div id="molDisplay">1,66 x 10<sup>-24</sup> mol</div>
+  </header>
+
+  <video id="video" playsinline muted autoplay></video>
+  <canvas id="glCanvas"></canvas>
+
+  <script type="module">
+    import { HandLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
+    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js';
+
+    let handLandmarker, running = false, smoothOpen = 0;
+    const video = document.getElementById('video');
+
+    // Configuração do Three.js
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('glCanvas'), alpha: true, antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    const handGroup = new THREE.Group();
+    scene.add(handGroup);
+
+    const maxParticles = 9000; // Reduzido ligeiramente para performance mobile
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(maxParticles * 3);
+    const vels = [];
+    for(let i=0; i<maxParticles; i++) {
+      positions[i*3] = (Math.random()-0.5) * 0.8;
+      positions[i*3+1] = (Math.random()-0.5) * 0.8;
+      positions[i*3+2] = (Math.random()-0.5) * 0.8;
+      vels.push(new THREE.Vector3((Math.random()-0.5)*0.02, (Math.random()-0.5)*0.02, (Math.random()-0.5)*0.02));
+    }
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const mat = new THREE.PointsMaterial({ color: 0x00f2ff, size: 0.03, transparent: true, blending: THREE.AdditiveBlending });
+    const points = new THREE.Points(geometry, mat);
+    geometry.setDrawRange(0, 1);
+    handGroup.add(points);
+    camera.position.z = 2.5;
+
+    async function init() {
+      try {
+        const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm");
+        handLandmarker = await HandLandmarker.createFromOptions(vision, {
+          baseOptions: { 
+            modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+            delegate: "GPU" 
+          },
+          runningMode: "VIDEO", numHands: 1
+        });
+
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } } 
+        });
+        
+        video.srcObject = stream;
+        video.onloadedmetadata = () => {
+          video.play();
+          document.getElementById('start-overlay').style.display = 'none';
+          running = true;
+          animate();
+        };
+      } catch (e) {
+        alert("Por favor, permita o acesso à câmara.");
+      }
+    }
+
+    document.getElementById('start-btn').addEventListener('click', init);
+
+    function formatSci(num) {
+      let exp = num.toExponential(3).split('e+');
+      return `${exp[0].replace('.', ',')} x 10<sup>${exp[1]}</sup>`;
+    }
+
+    function animate() {
+      if (handLandmarker && running) {
+        const results = handLandmarker.detectForVideo(video, performance.now());
+        
+        if (results.landmarks && results.landmarks[0]) {
+          const hand = results.landmarks[0];
+          
+          // Correção de Rastreamento para Mobile (Invertido e Escalonado)
+          // Landmark 9 é a base do dedo médio (ponto estável palma/dorso)
+          const aspect = window.innerWidth / window.innerHeight;
+          const targetX = (hand[9].x - 0.5) * -5 * aspect; 
+          const targetY = -(hand[9].y - 0.5) * 7; 
+
+          handGroup.position.x += (targetX - handGroup.position.x) * 0.2;
+          handGroup.position.y += (targetY - handGroup.position.y) * 0.2;
+
+          // Cálculo de abertura universal (Landmark 0 ao 12)
+          const dBase = Math.hypot(hand[0].x - hand[5].x, hand[0].y - hand[5].y);
+          const dTip = Math.hypot(hand[0].x - hand[12].x, hand[0].y - hand[12].y);
+          const ratio = dTip / dBase;
+          
+          // Sensibilidade ajustada: 0.85 é mão fechada, 1.8 é aberta
+          let targetOpen = Math.max(0, Math.min(1, (ratio - 0.85) / 0.95));
+          smoothOpen += (targetOpen - smoothOpen) * 0.1;
+
+          updateUI();
+        }
+      }
+
+      // Animação física das moléculas
+      const pos = geometry.attributes.position;
+      for(let i=0; i<maxParticles; i++) {
+        pos.array[i*3] += vels[i].x; pos.array[i*3+1] += vels[i].y;
+        if (Math.abs(pos.array[i*3]) > 0.5) vels[i].x *= -1;
+        if (Math.abs(pos.array[i*3+1]) > 0.5) vels[i].y *= -1;
+      }
+      pos.needsUpdate = true;
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+
+    function updateUI() {
+      const nDisp = document.getElementById('numberDisplay');
+      const mDisp = document.getElementById('molDisplay');
+      const header = document.getElementById('header');
+
+      if (smoothOpen < 0.05) {
+        nDisp.innerHTML = "1 MOLÉCULA";
+        mDisp.innerHTML = "1,66 x 10<sup>-24</sup> mol";
+        geometry.setDrawRange(0, 1);
+        header.classList.remove('target-reached');
+        mat.color.setHex(0x00f2ff);
+      } else if (smoothOpen > 0.85) {
+        nDisp.innerHTML = "6,022 x 10<sup>23</sup>";
+        mDisp.innerHTML = "1,0000 mol";
+        geometry.setDrawRange(0, maxParticles);
+        header.classList.add('target-reached');
+        mat.color.setHex(0xffd700);
+      } else {
+        const N = Math.pow(10, smoothOpen * 23.7797);
+        nDisp.innerHTML = formatSci(N);
+        const valMol = N / 6.02214e23;
+        mDisp.innerHTML = (valMol < 0.0001 ? valMol.toExponential(2).replace('.', ',') : valMol.toFixed(4).replace('.', ',')) + " mol";
+        geometry.setDrawRange(0, Math.floor(smoothOpen * maxParticles));
+        header.classList.remove('target-reached');
+        mat.color.setHex(0x00f2ff);
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
