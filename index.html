@@ -3,12 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Laboratório de Avogadro - Mobile Pro</title>
+  <title>Laboratório de Avogadro - Mobile Fixo</title>
   <style>
     :root { --accent: #00f2ff; --gold: #ffd700; }
     body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; color: white; height: 100vh; width: 100vw; }
     
-    /* Ecrã de Início: Necessário para autorizar câmara no Mobile */
     #start-overlay {
       position: fixed; inset: 0; background: #000; z-index: 100;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -56,9 +55,9 @@
     import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js';
 
     let handLandmarker, running = false, smoothOpen = 0;
+    let lastVideoTime = -1; // Controlador de frames para mobile
     const video = document.getElementById('video');
 
-    // Configuração do Three.js
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('glCanvas'), alpha: true, antialias: true });
@@ -67,7 +66,7 @@
     const handGroup = new THREE.Group();
     scene.add(handGroup);
 
-    const maxParticles = 9000; // Reduzido ligeiramente para performance mobile
+    const maxParticles = 8000; 
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(maxParticles * 3);
     const vels = [];
@@ -85,6 +84,7 @@
     camera.position.z = 2.5;
 
     async function init() {
+      document.getElementById('start-btn').innerText = "CARREGANDO...";
       try {
         const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm");
         handLandmarker = await HandLandmarker.createFromOptions(vision, {
@@ -96,18 +96,25 @@
         });
 
         const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } } 
+          video: { facingMode: "user" } 
         });
         
         video.srcObject = stream;
-        video.onloadedmetadata = () => {
+        
+        // CORREÇÃO CRÍTICA PARA MOBILE: O evento 'loadeddata' garante que o vídeo tem dimensões
+        video.addEventListener("loadeddata", () => {
+          // O MediaPipe exige estas propriedades explícitas para funcionar
+          video.width = video.videoWidth;
+          video.height = video.videoHeight;
           video.play();
+          
           document.getElementById('start-overlay').style.display = 'none';
           running = true;
           animate();
-        };
+        });
+
       } catch (e) {
-        alert("Por favor, permita o acesso à câmara.");
+        alert("Erro: Permita o acesso à câmara no navegador.");
       }
     }
 
@@ -119,14 +126,15 @@
     }
 
     function animate() {
-      if (handLandmarker && running) {
+      // O MediaPipe só analisa se houver um frame novo, poupando processamento
+      if (handLandmarker && running && video.currentTime !== lastVideoTime) {
+        lastVideoTime = video.currentTime;
+        
         const results = handLandmarker.detectForVideo(video, performance.now());
         
-        if (results.landmarks && results.landmarks[0]) {
+        if (results.landmarks && results.landmarks.length > 0) {
           const hand = results.landmarks[0];
           
-          // Correção de Rastreamento para Mobile (Invertido e Escalonado)
-          // Landmark 9 é a base do dedo médio (ponto estável palma/dorso)
           const aspect = window.innerWidth / window.innerHeight;
           const targetX = (hand[9].x - 0.5) * -5 * aspect; 
           const targetY = -(hand[9].y - 0.5) * 7; 
@@ -134,20 +142,17 @@
           handGroup.position.x += (targetX - handGroup.position.x) * 0.2;
           handGroup.position.y += (targetY - handGroup.position.y) * 0.2;
 
-          // Cálculo de abertura universal (Landmark 0 ao 12)
           const dBase = Math.hypot(hand[0].x - hand[5].x, hand[0].y - hand[5].y);
           const dTip = Math.hypot(hand[0].x - hand[12].x, hand[0].y - hand[12].y);
           const ratio = dTip / dBase;
           
-          // Sensibilidade ajustada: 0.85 é mão fechada, 1.8 é aberta
           let targetOpen = Math.max(0, Math.min(1, (ratio - 0.85) / 0.95));
-          smoothOpen += (targetOpen - smoothOpen) * 0.1;
+          smoothOpen += (targetOpen - smoothOpen) * 0.15;
 
           updateUI();
         }
       }
 
-      // Animação física das moléculas
       const pos = geometry.attributes.position;
       for(let i=0; i<maxParticles; i++) {
         pos.array[i*3] += vels[i].x; pos.array[i*3+1] += vels[i].y;
