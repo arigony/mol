@@ -476,7 +476,7 @@ function drawCloud(v) {
   ctx.clearRect(0, 0, w, h);
 
   const active = Math.max(1, Math.floor(1 + v * (particleCount - 1)));
-  const spread = 58 + v * 170;
+  const spread = 56 + v * 172;
   const baseX = plume.cx * w;
   const baseY = plume.cy * h;
   const gold = v > 0.97;
@@ -485,90 +485,132 @@ function drawCloud(v) {
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
 
-  const coreGlow = ctx.createRadialGradient(baseX, baseY, 8, baseX, baseY, spread * 1.18);
+  const singleMoleculeZone = Math.max(0, 1 - v / 0.14);
+  const cloudFadeIn = Math.max(0, Math.min(1, (v - 0.05) / 0.18));
+
+  if (singleMoleculeZone > 0.001) {
+    const pulse = 0.86 + 0.14 * Math.sin(t * 3.4);
+    const moleculeR = 8 + singleMoleculeZone * 10.5;
+    const haloR = moleculeR * (2.8 + 0.4 * pulse);
+
+    const halo = ctx.createRadialGradient(baseX, baseY, 0, baseX, baseY, haloR);
+    halo.addColorStop(0, `rgba(255,255,255,${0.26 * singleMoleculeZone})`);
+    halo.addColorStop(0.35, `rgba(175,245,255,${0.20 * singleMoleculeZone})`);
+    halo.addColorStop(0.7, `rgba(0,242,255,${0.10 * singleMoleculeZone})`);
+    halo.addColorStop(1, 'rgba(0,242,255,0)');
+    ctx.fillStyle = halo;
+    ctx.beginPath();
+    ctx.arc(baseX, baseY, haloR, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = `rgba(210,250,255,${0.28 * singleMoleculeZone})`;
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.arc(baseX, baseY, moleculeR * (1.9 + 0.08 * Math.sin(t * 2.8)), 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = `rgba(255,255,255,${0.98 * singleMoleculeZone})`;
+    ctx.beginPath();
+    ctx.arc(baseX, baseY, moleculeR, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = `rgba(235,255,255,${0.75 * singleMoleculeZone})`;
+    ctx.beginPath();
+    ctx.arc(baseX - moleculeR * 0.18, baseY - moleculeR * 0.2, moleculeR * 0.34, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  const coreGlow = ctx.createRadialGradient(baseX, baseY, 10, baseX, baseY, spread * 1.2);
   if (gold) {
-    coreGlow.addColorStop(0, 'rgba(255,244,180,0.24)');
-    coreGlow.addColorStop(0.45, 'rgba(255,215,0,0.11)');
-    coreGlow.addColorStop(1, 'rgba(255,215,0,0.00)');
+    coreGlow.addColorStop(0, `rgba(255,246,185,${0.22 * cloudFadeIn})`);
+    coreGlow.addColorStop(0.38, `rgba(255,215,0,${0.12 * cloudFadeIn})`);
+    coreGlow.addColorStop(1, 'rgba(255,215,0,0)');
   } else {
-    coreGlow.addColorStop(0, 'rgba(230,255,255,0.16)');
-    coreGlow.addColorStop(0.42, 'rgba(0,242,255,0.14)');
-    coreGlow.addColorStop(1, 'rgba(0,242,255,0.00)');
+    coreGlow.addColorStop(0, `rgba(245,255,255,${0.16 * cloudFadeIn})`);
+    coreGlow.addColorStop(0.3, `rgba(120,245,255,${0.12 * cloudFadeIn})`);
+    coreGlow.addColorStop(0.68, `rgba(0,200,255,${0.07 * cloudFadeIn})`);
+    coreGlow.addColorStop(1, 'rgba(0,242,255,0)');
   }
   ctx.fillStyle = coreGlow;
   ctx.beginPath();
-  ctx.arc(baseX, baseY, spread * 1.18, 0, Math.PI * 2);
+  ctx.arc(baseX, baseY, spread * 1.2, 0, Math.PI * 2);
   ctx.fill();
 
-  const mist1 = ctx.createRadialGradient(baseX - spread * 0.22, baseY - spread * 0.10, 4, baseX - spread * 0.22, baseY - spread * 0.10, spread * 0.72);
-  const mist2 = ctx.createRadialGradient(baseX + spread * 0.18, baseY + spread * 0.06, 4, baseX + spread * 0.18, baseY + spread * 0.06, spread * 0.64);
-  if (gold) {
-    mist1.addColorStop(0, 'rgba(255,230,120,0.10)');
-    mist1.addColorStop(1, 'rgba(255,215,0,0.00)');
-    mist2.addColorStop(0, 'rgba(255,245,190,0.08)');
-    mist2.addColorStop(1, 'rgba(255,215,0,0.00)');
-  } else {
-    mist1.addColorStop(0, 'rgba(90,255,255,0.09)');
-    mist1.addColorStop(1, 'rgba(0,242,255,0.00)');
-    mist2.addColorStop(0, 'rgba(220,255,255,0.07)');
-    mist2.addColorStop(1, 'rgba(0,242,255,0.00)');
+  const mistLayers = [
+    { dx: -0.24, dy: -0.11, r: 0.70, a1: 0.08, a2: 0.00 },
+    { dx: 0.20, dy: 0.07, r: 0.63, a1: 0.06, a2: 0.00 },
+    { dx: 0.03, dy: -0.18, r: 0.52, a1: 0.05, a2: 0.00 }
+  ];
+
+  for (const layer of mistLayers) {
+    const gx = baseX + spread * layer.dx;
+    const gy = baseY + spread * layer.dy;
+    const gr = spread * layer.r;
+    const g = ctx.createRadialGradient(gx, gy, 4, gx, gy, gr);
+    if (gold) {
+      g.addColorStop(0, `rgba(255,238,150,${layer.a1 * cloudFadeIn})`);
+      g.addColorStop(1, 'rgba(255,215,0,0)');
+    } else {
+      g.addColorStop(0, `rgba(170,250,255,${layer.a1 * cloudFadeIn})`);
+      g.addColorStop(0.5, `rgba(65,225,255,${(layer.a1 * 0.45) * cloudFadeIn})`);
+      g.addColorStop(1, 'rgba(0,242,255,0)');
+    }
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(gx, gy, gr, 0, Math.PI * 2);
+    ctx.fill();
   }
-  ctx.fillStyle = mist1;
-  ctx.beginPath();
-  ctx.arc(baseX - spread * 0.22, baseY - spread * 0.10, spread * 0.72, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = mist2;
-  ctx.beginPath();
-  ctx.arc(baseX + spread * 0.18, baseY + spread * 0.06, spread * 0.64, 0, Math.PI * 2);
-  ctx.fill();
 
   for (let i = 0; i < active; i++) {
     const p = particles[i];
     p.j += 0.012 + v * 0.016;
     p.pulse += 0.022 + p.depth * 0.006;
-    p.x += p.vx * (0.9 + v * 0.4) + Math.cos(p.j * 0.7) * 0.00035 * p.orbit;
-    p.y += p.vy * (0.9 + v * 0.4) + Math.sin(p.j * 0.9) * 0.00028 * p.orbit + p.drift;
+    p.x += p.vx * (0.9 + v * 0.42) + Math.cos(p.j * 0.7) * 0.00035 * p.orbit;
+    p.y += p.vy * (0.9 + v * 0.42) + Math.sin(p.j * 0.9) * 0.00028 * p.orbit + p.drift;
     if (p.x < -1 || p.x > 1) p.vx *= -1;
     if (p.y < -1 || p.y > 1) p.vy *= -1;
 
-    const orbitX = Math.cos(p.j * p.orbit) * 0.17 * p.depth;
-    const orbitY = Math.sin(p.j * (0.8 + p.depth * 0.35)) * 0.14 * p.depth;
+    const orbitX = Math.cos(p.j * p.orbit) * 0.18 * p.depth;
+    const orbitY = Math.sin(p.j * (0.82 + p.depth * 0.34)) * 0.15 * p.depth;
     const x = baseX + (p.x + orbitX) * spread;
     const y = baseY + (p.y + orbitY) * spread;
-    const twinkle = 0.82 + 0.18 * Math.sin(p.pulse + t * 1.8);
-    const r = p.s * (0.72 + v * 0.78) * p.depth * twinkle;
-    const alpha = Math.min(0.95, p.a * (0.86 + 0.22 * twinkle));
+    const twinkle = 0.82 + 0.18 * Math.sin(p.pulse + t * 1.9);
+    const r = p.s * (0.68 + v * 0.76) * p.depth * twinkle;
+    const alpha = Math.min(0.95, p.a * (0.84 + 0.22 * twinkle)) * cloudFadeIn;
+
+    if (alpha < 0.01) continue;
 
     if (p.glow) {
-      const g = ctx.createRadialGradient(x, y, 0, x, y, r * 3.2);
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r * 3.4);
       if (gold) {
-        g.addColorStop(0, `rgba(255,250,220,${alpha * 0.34})`);
+        g.addColorStop(0, `rgba(255,250,225,${alpha * 0.34})`);
         g.addColorStop(0.45, `rgba(255,215,0,${alpha * 0.16})`);
         g.addColorStop(1, 'rgba(255,215,0,0)');
       } else {
-        g.addColorStop(0, `rgba(255,255,255,${alpha * 0.24})`);
-        g.addColorStop(0.45, `rgba(0,242,255,${alpha * 0.15})`);
+        g.addColorStop(0, `rgba(255,255,255,${alpha * 0.26})`);
+        g.addColorStop(0.32, `rgba(150,245,255,${alpha * 0.18})`);
+        g.addColorStop(0.62, `rgba(0,210,255,${alpha * 0.10})`);
         g.addColorStop(1, 'rgba(0,242,255,0)');
       }
       ctx.fillStyle = g;
       ctx.beginPath();
-      ctx.arc(x, y, r * 3.2, 0, Math.PI * 2);
+      ctx.arc(x, y, r * 3.4, 0, Math.PI * 2);
       ctx.fill();
     }
 
     ctx.beginPath();
     ctx.fillStyle = gold
       ? `rgba(255,220,60,${alpha})`
-      : `rgba(0,242,255,${alpha})`;
+      : `rgba(40,230,255,${alpha})`;
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();
 
-    if (p.depth > 1.05) {
+    if (p.depth > 1.03) {
       ctx.beginPath();
       ctx.fillStyle = gold
-        ? `rgba(255,252,235,${alpha * 0.32})`
-        : `rgba(255,255,255,${alpha * 0.24})`;
-      ctx.arc(x, y, r * 0.42, 0, Math.PI * 2);
+        ? `rgba(255,252,235,${alpha * 0.34})`
+        : `rgba(255,255,255,${alpha * 0.28})`;
+      ctx.arc(x, y, r * 0.44, 0, Math.PI * 2);
       ctx.fill();
     }
   }
