@@ -1,3 +1,12 @@
+## Educational reach and validation
+
+This repository is part of an open educational technology initiative for chemistry education. The learning object has been designed for use with students in real teaching contexts, including high school chemistry and introductory chemistry courses.
+
+The project is connected to the validation of a chemistry learning object in the context of a Master's dissertation, with emphasis on interactive visualization, mobile access, augmented-reality-inspired interaction, and student engagement.
+
+Unlike traditional software packages measured mainly by downloads or dependencies, this repository contributes to the open-source educational ecosystem by providing a reusable, low-cost, browser-based resource that teachers can adapt and deploy through GitHub Pages without commercial software or specialized infrastructure.
+
+
 # Laboratório de Avogadro
 
 Simulação interativa para ensino de **quantidade de matéria** e **número de Avogadro**, desenvolvida para uso em aulas de Química com **smartphones, tablets e computadores**.
